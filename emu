@@ -1,0 +1,55 @@
+nographic
+
+machine
+    midgard
+
+cpu
+    rv64
+
+smp
+    1
+
+m
+    16G
+
+rtc
+    clock           vm
+
+kernel
+    ${root}/kernel.bin
+
+initrd
+    ${root}/rootfs.img
+
+dtb
+    ${root}/custom.dtb
+
+savevm-external
+
+IF snap
+loadvm-external
+    ${snap}
+
+singlestep
+
+icount
+    shift           0
+    sleep           on
+    align           off
+
+qflex
+
+IF trace
+    lib-path        ${root}/KeenKraken/libKeenKraken.so
+    cfg-path        ${root}/trace.cfg
+ENDIF
+
+IF timing
+    timing
+    lib-path        ${root}/KnottyKraken/libKnottyKraken.so
+    cfg-path        ${root}/timing.cfg
+ENDIF
+
+    cycles          1000000000
+    cycles-mask     1
+ENDIF
