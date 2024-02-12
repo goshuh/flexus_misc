@@ -31,6 +31,12 @@ cd build
 ninja
 ```
 
+If you encounter the problem `undefined reference to symbol dlsym@@GLIBC_2.2.5`, please use the following commands to [configure](https://stackoverflow.com/questions/67667369/undefined-reference-to-symbol-dlsymglibc-2-2-5) QEMU :
+
+```sh
+./configure --target-list=riscv64-softmmu --extra-ldflags='-Wl,--no-as-needed,-ldl'
+```
+
 ## Building FLEXUS
 ```sh
 cd flexus_misc
