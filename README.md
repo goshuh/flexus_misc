@@ -25,6 +25,7 @@ git clone https://github.com/goshuh/flexus_misc
 
 ```sh
 cd midgard_qemu
+git checkout qflex # the qflex support is in this branch
 ./configure --target-list=riscv64-softmmu
 cd build
 ninja
