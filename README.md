@@ -4,12 +4,13 @@
 
 The following packages should be installed to build QEMU and FLEXUS
 
-- gcc (or g++ in Debian, with C++14 support)
+- GNU Compiler (gcc/g++) (with C++14 support) [Which GNU Compiler support which standard](https://gcc.gnu.org/projects/cxx-status.html)
 - cmake
 - meson
 - ninja (maybe as a dependency of meson)
 - boost
-- glib (may also be called glib-2.0)
+- GNU Lib C (min 2.35) _Run `ldd --version` to know about_
+- GNOME Lib C (min 2.72) 
 
 No requirements for old/outdated Linux distributions. Just use latest ones.
 
@@ -30,7 +31,8 @@ export FLEXUS_ROOT $(realpath flexus)
 
 ```sh
 cd midgard_qemu
-./configure --target-list=riscv64-softmmu
+git checkout qflex # the qflex support is in this branch
+./configure --target-list=riscv64-softmmu --disable-docs
 cd build
 ninja
 ```
@@ -38,7 +40,7 @@ ninja
 If you encounter the problem `undefined reference to symbol dlsym@@GLIBC_2.2.5`, please use the following commands to [configure](https://stackoverflow.com/questions/67667369/undefined-reference-to-symbol-dlsymglibc-2-2-5) QEMU:
 
 ```sh
-./configure --target-list=riscv64-softmmu --extra-ldflags='-Wl,--no-as-needed,-ldl'
+./configure --target-list=riscv64-softmmu --disable-docs --extra-ldflags='-Wl,--no-as-needed,-ldl'
 ```
 
 ## Building FLEXUS
