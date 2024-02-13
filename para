@@ -1,0 +1,27 @@
+#!/bin/bash
+
+set -e
+
+core=1
+args=()
+
+while (( ${#} )); do
+    case ${1} in
+        -core=*)
+            core=${1##*=};
+            shift
+            ;;
+        *)
+            args+=(${1})
+            shift
+            ;;
+    esac
+done
+
+set -- ${args[@]}
+
+if [[ ${#} -eq 0 ]]; then
+    exit
+fi
+
+exec parallel --arg-file ${1} --max-lines 1 --max-procs ${core}
