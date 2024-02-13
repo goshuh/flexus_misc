@@ -17,9 +17,14 @@ No requirements for old/outdated Linux distributions. Just use latest ones.
 ## Clone repositories
 
 ```sh
-git clone https://github.com/goshuh/midgard_qemu
+git clone -b qflex https://github.com/goshuh/midgard_qemu
 git clone https://github.com/goshuh/flexus
 git clone https://github.com/goshuh/flexus_misc
+```
+
+## Setting up environement
+```bash
+export FLEXUS_ROOT $(realpath flexus)
 ```
 
 ## Building QEMU
@@ -41,9 +46,11 @@ If you encounter the problem `undefined reference to symbol dlsym@@GLIBC_2.2.5`,
 ## Building FLEXUS
 ```sh
 cd flexus_misc
-export FLEXUS_ROOT ${PATH_TO_FLEXUS} # you only need this once before invoking build
+# you only need this once before invoking build
 ./build KeenKraken # trace simulator, or
+make -C KeenKraken
 ./build KnottyKraken # timing simulator
+make -C KnottyKraken
 ```
 
 ## Create symlinks

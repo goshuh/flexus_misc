@@ -1,0 +1,33 @@
+#!/usr/bin/expect
+
+set CMD [lindex $argv 0]
+set ARG [lindex $argv 1]
+
+exec mkdir -p "${CMD}.${ARG}"
+
+log_user 0
+log_file -a -noappend "${CMD}.${ARG}/boot.log"
+
+set timeout -1
+
+puts "running ${CMD} ${ARG}"
+
+spawn runq
+
+expect -exact "/ # "
+send -- "/bin/${CMD} ${ARG}\n"
+
+expect -exact "INIT_DONE!!!"
+sleep 300
+
+send "\x01"
+send "c"
+
+expect -exact "(qemu) "
+send -- "stop\n"
+
+expect -exact "(qemu) "
+send -- "savevm-external ${CMD}.${ARG}\n"
+
+expect -exact "(qemu) "
+send -- "q\n"
