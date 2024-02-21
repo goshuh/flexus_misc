@@ -7,7 +7,7 @@ cpu
     rv64
 
 smp
-    1
+    ${smp}
 
 m
     16G
@@ -32,6 +32,9 @@ loadvm-external
 
 singlestep
 
+d
+    nochain
+
 icount
     shift           0
     sleep           on
@@ -48,6 +51,7 @@ IF timing
     timing
     lib-path        ${root}/KnottyKraken/libKnottyKraken.so
     cfg-path        ${root}/timing.cfg
+    debug           vverb
 ENDIF
 
     cycles          1000000000
