@@ -98,6 +98,24 @@ cd flexus_misc
 
 You can change parameters passed to FLEXUS in the `timing.cfg` file.
 
+## Multicore simulation
+
+To run the simulation with multiple cores, you can just add `+smp={NR_CPUS}` to the command line of `runq` without changing anything. Note that the same `+smp=` argument should be provided when only running QEMU to prepare the shapshot or running trace/timing simulation with that snapshot. For example, to simulate 32 cores:
+
+```sh
+cd flexus_misc
+./runq +smp=32 # then save the snapshot
+./runq +smp=32 +timing +snap=${SNAPSHOT_NAME}
+```
+
+Currently there is a `/bin/stress` in the rootfs to stress test the system. In the QEMU console, you can run
+
+```sh
+/bin/stress --vm 32 --vm-bytes 4096
+```
+
+to execute it (and then save a snapshot).
+
 # Notes
 
 These repos are updated frequently, so please also pull them frequently.
