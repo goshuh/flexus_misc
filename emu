@@ -43,17 +43,18 @@ icount
 qflex
 
 IF trace
+    update          on
     lib-path        ${root}/KeenKraken/libKeenKraken.so
     cfg-path        ${root}/trace.cfg
+    cycles          10000000
+    cycles-mask     1
 ENDIF
 
 IF timing
-    timing
+    timing          on
     lib-path        ${root}/KnottyKraken/libKnottyKraken.so
     cfg-path        ${root}/timing.cfg
-    debug           vverb
+    cycles          10000000
 ENDIF
 
-    cycles          1000000000
-    cycles-mask     1
 ENDIF
