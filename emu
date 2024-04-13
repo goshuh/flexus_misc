@@ -24,6 +24,11 @@ initrd
 dtb
     ${root}/custom.dtb
 
+icount
+    shift           0
+    sleep           on
+    align           off
+
 savevm-external
 
 IF snap
@@ -34,11 +39,6 @@ singlestep
 
 d
     nochain
-
-icount
-    shift           0
-    sleep           on
-    align           off
 
 qflex
 
