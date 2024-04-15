@@ -2,7 +2,7 @@
 
 set -e
 
-core=1
+core=40
 args=()
 
 while (( ${#} )); do

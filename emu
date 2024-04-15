@@ -39,7 +39,7 @@ qflex
 
 IF trace
     update          on
-    lib-path        ${root}/KeenKraken/libKeenKraken.so
+    lib-path        ${root}/libKeenKraken.so
     cfg-path        ${root}/trace.cfg
     cycles          10000000
     cycles-mask     1
@@ -47,7 +47,7 @@ ENDIF
 
 IF timing
     timing          on
-    lib-path        ${root}/KnottyKraken/libKnottyKraken.so
+    lib-path        ${root}/libKnottyKraken.so
     cfg-path        ${root}/timing.cfg
     cycles          10000000
 ENDIF

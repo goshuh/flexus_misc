@@ -75,7 +75,7 @@ def main(*opts):
             sp = op[1:].split('=')
             if sp:
                 os.environ[sp[0]] = sp[1] if len(sp) > 1 else '1'
-        else:
+        elif op:
             real.append(op)
 
     emu  = not real or real[0].startswith('-')
@@ -135,8 +135,26 @@ def main(*opts):
 
     if 'dry' in os.environ:
         print(' '.join(args))
-    else:
-        os.execvp(args[0], args)
+        return
+
+    out = os.environ.get('stdout', '')
+    err = os.environ.get('stderr', '')
+    fdo = 0
+    fde = 0
+
+    if out:
+        fdo = os.open(out, os.O_RDWR | os.O_CREAT)
+    if err == out or err == '-':
+        fde = fdo
+    elif err:
+        fde = os.open(err, os.O_RDWR | os.O_CREAT)
+
+    if fdo:
+        os.dup2(fdo, 1)
+    if fde:
+        os.dup2(fde, 2)
+
+    os.execvp(args[0], args)
 
 
 if __name__ == '__main__':
