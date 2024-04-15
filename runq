@@ -64,6 +64,44 @@ def test(cs, opts):
     cs.append(cond and last)
 
 
+def kick(args):
+    out = os.environ.get('stdout', '')
+    err = os.environ.get('stderr', '')
+    fdo = 0
+    fde = 0
+
+    if out:
+        fdo = os.open(out, os.O_RDWR | os.O_CREAT)
+    if err == out or err == '-':
+        fde = fdo
+    elif err:
+        fde = os.open(err, os.O_RDWR | os.O_CREAT)
+
+    if fdo:
+        os.dup2(fdo, 1)
+    if fde:
+        os.dup2(fde, 2)
+
+    if 'daemon' in os.environ:
+        pid = os.fork()
+
+        if pid < 0:
+            sys.exit(f'ERROR: 1st fork failed')
+        if pid > 0:
+            return
+
+        os.setsid()
+
+        pid = os.fork()
+
+        if pid < 0:
+            sys.exit(f'ERROR: 2nd fork failed')
+        if pid > 0:
+            return
+
+    os.execvp(args[0], args)
+
+
 def main(*opts):
     real = []
 
@@ -135,26 +173,8 @@ def main(*opts):
 
     if 'dry' in os.environ:
         print(' '.join(args))
-        return
-
-    out = os.environ.get('stdout', '')
-    err = os.environ.get('stderr', '')
-    fdo = 0
-    fde = 0
-
-    if out:
-        fdo = os.open(out, os.O_RDWR | os.O_CREAT)
-    if err == out or err == '-':
-        fde = fdo
-    elif err:
-        fde = os.open(err, os.O_RDWR | os.O_CREAT)
-
-    if fdo:
-        os.dup2(fdo, 1)
-    if fde:
-        os.dup2(fde, 2)
-
-    os.execvp(args[0], args)
+    else:
+        kick(args)
 
 
 if __name__ == '__main__':
