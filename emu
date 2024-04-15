@@ -35,11 +35,6 @@ IF snap
 loadvm-external
     ${snap}
 
-singlestep
-
-d
-    nochain
-
 qflex
 
 IF trace
