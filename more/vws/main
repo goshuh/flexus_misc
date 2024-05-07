@@ -1,0 +1,77 @@
+#!/bin/bash
+
+ASSOC=(    \
+    4096   \
+    2048   \
+    1024   \
+    512    \
+    256    \
+    128    \
+    64     \
+    32     \
+    16     \
+    8      \
+)
+
+REQPS=(    \
+    40000  \
+    80000  \
+    120000 \
+    160000 \
+    200000 \
+    240000 \
+    280000 \
+)
+
+CHAIN=(    \
+    01     \
+    02     \
+    04     \
+    08     \
+    16     \
+    32     \
+)
+
+
+prep() {
+    for i in ${REQPS[@]}; do
+        for j in ${CHAIN[@]}; do
+            dir=${work}_${i}_${j}
+
+            case ${1} in
+                snap)
+                    echo "WORK_ARGS=\"${work} -r ${i} -c ${j}\" ./snap ${dir}"
+                    ;;
+
+                flex)
+                    echo "./trace ${dir} && ./timing ${dir}"
+                    ;;
+            esac
+        done
+    done
+}
+
+
+main() {
+    prep snap >> snap.cmd
+    prep flex >> flex.cmd
+
+    ./para -file=snap.cmd
+
+    for i in ${ASSOC[@]}; do
+        echo "running ${i}"
+
+        ./para -file=flex.cmd -mmu:dvlbsets 1 -mmu:dvlbways ${i} -mmu:vlbtest true
+
+        mkdir -p results/${i}
+
+        for j in ${REQPS[@]}; do
+            for k in ${CHAIN[@]}; do
+                src=${work}_${j}_${k}
+                dst=results/${i}/${src}
+
+                copy ${dst} ${src}
+            done
+        done
+    done
+}
