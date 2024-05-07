@@ -7,4 +7,5 @@ mkdir -p ${SIM} && cd ${SIM}
 exec cmake ${FLEXUS_ROOT} \
     -DSIMULATOR=${SIM} \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+    -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_CXX_FLAGS="-DFLEXUS -Wno-error=maybe-uninitialized -Wno-error=dangling-pointer"

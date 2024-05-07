@@ -2,11 +2,16 @@
 
 set -e
 
-core=40
+file=para.cmd
+core=45
 args=()
 
 while (( ${#} )); do
     case ${1} in
+        -file=*)
+            file=${1##*=}
+            shift
+            ;;
         -core=*)
             core=${1##*=};
             shift
@@ -18,10 +23,6 @@ while (( ${#} )); do
     esac
 done
 
-set -- ${args[@]}
+export FLEXUS_CFG_OVERRIDE="${args[*]}"
 
-if [[ ${#} -eq 0 ]]; then
-    exit
-fi
-
-exec parallel --arg-file ${1} --max-lines 1 --max-procs ${core}
+exec parallel --env FLEXUS_CFG_OVERRIDE --arg-file ${file} --max-lines 1 --max-procs ${core}

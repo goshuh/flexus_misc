@@ -8,7 +8,6 @@ fi
 
 snap=${1} && shift
 
-export FLEXUS_CFG_OVERRIDE="${*}"
 export FLEXUS_LOG_OVERRIDE=timing.log
 
 exec ./runq ${RUNQ_ARGS} +timing +snap=${snap}/adv +stdout=${snap}/adv/timing.out +stderr=-
