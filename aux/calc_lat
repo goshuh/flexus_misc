@@ -4,6 +4,8 @@ import os
 import sys
 
 import re
+import struct
+
 import numpy as np
 
 
@@ -15,111 +17,39 @@ class Stamp(object):
 
 
 def parse(dic, fn):
-    pat  = re.compile(r'@(\d+) c(\d+) (\d+) (\d+)')
-
     if not os.path.isfile(fn):
         return
 
     # 32 cores at most
-    temp = [[] for _ in range(32)]
-    func = [[] for _ in range(32)]
-
-    curr = 0
-    prev = 0
     real = [[] for _ in range(32)]
     fake = [[] for _ in range(32)]
 
-    rall = [0  for _ in range(32)]
+    info = '@QQ'
+    size = struct.calcsize(info)
 
-    # ad hoc
-    init = False
-    last = 0
-    loop = 0
-    offs = 0
-    bad  = 0
-
-    end  = False
-
-    with open(fn) as fd:
-        for cs in fd:
-            if cs.startswith('Simulation terminated by flexus.'):
-                end = True
+    with open(fn, 'rb') as fd:
+        while True:
+            if len(data := fd.read(size)) < size:
                 break
 
-            if not (mat := pat.match(cs)):
+            arg, wid = struct.unpack(info, data)
+
+            if len(data := fd.read(wid)) < wid:
+                break
+
+            if arg:
                 continue
 
-            time = int(mat.group(1))
-            core = int(mat.group(2))
-            key  = int(mat.group(3))
-            val  = int(mat.group(4))
-
-            t = temp[core]
-            f = func[core]
+            time, core, _, key, val = struct.unpack('@QQQQQ', data)
 
             match key:
-                case 1:
-                    if t and t[-1].cid == val:
-                        f.append(time - t.pop().time)
-                    else:
-                        t.append(Stamp(val, time))
+                case 4:
+                    real[core].append(val)
 
-                    curr = 0
+                case 5:
+                    fake[core].append(val)
 
-                case 2:
-                    # we must observe a jump in time
-                    if not init and last and time - last > 100:
-                        init = True
-
-                    if not init:
-                        last = time
-                        continue
-
-                    match curr:
-                        case 0: # prev
-                            prev = val
-
-                        case 1: # real
-                            todo = 0
-
-                            if (diff := val - prev) < offs:
-                                # the trace queue is shrinking
-                                offs = diff
-                                todo = val - last
-                            else:
-                                todo = val - prev - offs
-
-                            # very unwanted thing happens: 100x longer latency than avg
-                            if todo * len(real[core]) > rall[core] * 100:
-                                todo = rall[core] // len(real[core])
-                                offs = val - last
-                                bad += 1
-
-                            real[core].append(todo)
-                            rall[core] += todo
-
-                            # for the next iteration
-                            last = val
-
-                        case 2: # fake
-                            fake[core].append(val - prev)
-
-                            # the first iteration
-                            # negate the effect of the trace queue
-                            if loop == 0:
-                                if (r := real[core].pop()) > (f := fake[core].pop()):
-                                    offs = r - f
-
-                    if curr == 2:
-                        loop += 1
-                        curr  = 0
-                    else:
-                        curr += 1
-
-    if end:
-        print(f'{fn} ({bad})', file = sys.stderr)
-    else:
-        print(f'{fn} not terminated', file = sys.stderr)
+    print(fn, file = sys.stderr)
 
     def output(cds, name, arr):
         if not arr:
@@ -146,6 +76,7 @@ def parse(dic, fn):
         if len(sp) == 3:
             l = int(sp[1])
             n = int(sp[2])
+            break
 
     if not l:
         return
@@ -154,29 +85,40 @@ def parse(dic, fn):
     nds = lds.setdefault(n, {})
 
     for c in range(32):
-        if func[c] or real[c] or fake[c]:
+        if real[c] or fake[c]:
             cds = nds.setdefault(c, {})
 
-            output(cds, 'func', func[c])
             output(cds, 'real', real[c])
             output(cds, 'fake', fake[c])
+
+
+def traverse(dir):
+    sub = list(map(re.compile, dir.split(os.sep)))
+
+    def iterate(top, dep):
+        end = dep == len(sub) - 1
+
+        for f in os.listdir(top):
+            if sub[dep].match(f):
+                cur = os.path.join(top, f)
+
+                if end:
+                    yield cur
+                elif os.path.isdir(cur):
+                    yield from iterate(cur, dep + 1)
+
+    yield from iterate('.', 0)
 
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         sys.exit(f'usage: {sys.argv[0]} <dir>')
 
-    pat = re.compile(sys.argv[1])
     dic = {}
-
-    for cur, _, fns in os.walk('.'):
-        for fn in fns:
-            fn = os.path.relpath(os.path.join(cur, fn), '.')
-
-            if pat.match(fn):
-                parse(dic, fn)
-
     out = []
+
+    for fn in traverse(sys.argv[1]):
+        parse(dic, fn)
 
     for l, lds in dic.items():
         for n, nds in lds.items():

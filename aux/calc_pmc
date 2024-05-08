@@ -40,19 +40,32 @@ def parse(dic, fn):
         nds[sp[0]] = sp[1]
 
 
+def traverse(dir):
+    sub = list(map(re.compile, dir.split(os.sep)))
+
+    def iterate(top, dep):
+        end = dep == len(sub) - 1
+
+        for f in os.listdir(top):
+            if sub[dep].match(f):
+                cur = os.path.join(top, f)
+
+                if end:
+                    yield cur
+                elif os.path.isdir(cur):
+                    yield from iterate(cur, dep + 1)
+
+    yield from iterate('.', 0)
+
+
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         sys.exit(f'usage: {sys.argv[0]} <dir>')
 
-    pat = re.compile(sys.argv[1])
     dic = {}
 
-    for cur, _, fns in os.walk('.'):
-        for fn in fns:
-            fn = os.path.relpath(os.path.join(cur, fn), '.')
-
-            if (pat.match(fn)):
-                parse(dic, fn)
+    for fn in traverse(sys.argv[1]):
+        parse(dic, fn)
 
     pat = [re.compile(p) for p in sys.argv[2:]]
     out = []
