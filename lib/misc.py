@@ -25,8 +25,8 @@ def copy(src, dst):
     move(os.path.join(src, 'stats_db.out.gz'),          os.path.join(dst, 'trace.gz'))
     move(os.path.join(src, 'configuration.out'),        os.path.join(dst, 'trace.cfg'))
 
-    move(os.path.join(dst, 'adv', 'stats_db.out.gz'),   os.path.join(dst, 'timing.gz'))
-    move(os.path.join(dst, 'adv', 'configuration.out'), os.path.join(dst, 'timing.cfg'))
+    move(os.path.join(dst, 'adv', 'stats_db.out.gz'),   os.path.join(dst, 'adv', 'timing.gz'))
+    move(os.path.join(dst, 'adv', 'configuration.out'), os.path.join(dst, 'adv', 'timing.cfg'))
 
 
 def para(file, info, core, *cmds):
