@@ -1,0 +1,45 @@
+#!/usr/bin/env expect
+
+set NAME [lindex ${argv} 0]
+
+if {[info exists ::env(RUNQ_ARGS)]} {
+    set RUNQ_ARGS $::env(RUNQ_ARGS)
+} else {
+    set RUNQ_ARGS ""
+}
+
+if {[info exists ::env(WORK_ARGS)]} {
+    set WORK_ARGS $::env(WORK_ARGS)
+} else {
+    set WORK_ARGS ""
+}
+
+exec mkdir -p "${NAME}/adv"
+
+exec echo "RUNQ_ARGS: ${RUNQ_ARGS}\nWORK_ARGS: ${WORK_ARGS}" >${NAME}/args.out
+
+log_user 0
+log_file -a -noappend ${NAME}/snap.out
+
+set timeout -1
+
+spawn ./runq ${RUNQ_ARGS}
+
+expect -exact "/ # "
+send -- "/bin/${WORK_ARGS}\n"
+
+expect -exact "INIT_DONE!!!"
+sleep 200
+
+# ctrl-a
+send "\x01"
+send "c"
+
+expect -exact "(qemu) "
+send -- "stop\n"
+
+expect -exact "(qemu) "
+send -- "savevm-external ${NAME}\n"
+
+expect -exact "(qemu) "
+send -- "q\n"
