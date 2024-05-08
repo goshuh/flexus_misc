@@ -1,32 +1,35 @@
-#!/usr/bin/env python3
-
-from __future__ import print_function
-
+#!/usr/bin/python3
 
 import os
 import sys
 
+import re
 import shlex
 import functools
+import subprocess
 
 
 def find(fn):
-    dn = os.path.dirname(fn)
-    if not dn:
+    if not (dn := os.path.dirname(fn)):
         dn = '.'
 
     if not os.path.isdir(dn):
         return None
 
-    for f in os.listdir(dn):
-        if f == fn:
-            return os.path.abspath(os.path.join(dn, f))
+    fn = os.path.abspath(os.path.join(dn, fn))
+
+    if os.path.isfile(fn):
+        return fn
 
     return None
 
 
-def norm(fn):
-    fn  = os.path.expandvars(fn)
+def norm(env, fn):
+    pat = re.compile(r'\$\{([^}]*)\}')
+
+    while mat := pat.search(fn):
+        sp = mat.span(0)
+        fn = fn[:sp[0]] + env.get(mat.group(1), '') + fn[sp[1]:]
 
     if fn.find(os.sep) < 0:
         return fn
@@ -50,7 +53,7 @@ def norm(fn):
     return os.sep.join(ret)
 
 
-def test(cs, opts):
+def test(env, cs, opts):
     last = cs[-1] if cs else True
     cond = False
 
@@ -58,14 +61,24 @@ def test(cs, opts):
         if op == 'OR':
             continue
 
-        cond = cond or op in os.environ
+        cond = cond or op in env
 
     cs.append(cond and last)
 
 
-def kick(args):
-    out = os.environ.get('stdout', '')
-    err = os.environ.get('stderr', '')
+def kick(env, args):
+    if 'expect' in env:
+        import pexpect
+
+        log = env.get('logfile', '')
+
+        return pexpect.spawn(args[0],
+                    args    = args[1:],
+                    timeout = None,
+                    logfile = open(log, 'wb') if log else None)
+
+    out = env.get('stdout', '')
+    err = env.get('stderr', '')
     fdo = 0
     fde = 0
 
@@ -81,37 +94,35 @@ def kick(args):
     if fde:
         os.dup2(fde, 2)
 
-    if 'daemon' in os.environ:
-        pid = os.fork()
-
-        if pid < 0:
+    if 'daemon' in env:
+        if (pid := os.fork()) < 0:
             sys.exit(f'ERROR: 1st fork failed')
-        if pid > 0:
+        elif pid > 0:
             return
 
         os.setsid()
 
-        pid = os.fork()
-
-        if pid < 0:
+        if (pid := os.fork()) < 0:
             sys.exit(f'ERROR: 2nd fork failed')
-        if pid > 0:
+        elif pid > 0:
             return
 
-    os.execvp(args[0], args)
+    if 'wait' in env:
+        return subprocess.run(args, stdout = fdo, stderr = fde)
+    else:
+        os.execvp(args[0], args)
 
 
-def main(*opts):
+def runq(env, *opts):
     real = []
 
     # defaults
-    os.environ['smp'] = '1'
+    env['smp'] = '1'
 
     for op in opts:
         if op.startswith('+'):
-            sp = op[1:].split('=')
-            if sp:
-                os.environ[sp[0]] = sp[1] if len(sp) > 1 else '1'
+            if sp := op[1:].split('='):
+                env[sp[0]] = sp[1] if len(sp) > 1 else '1'
         elif op:
             real.append(op)
 
@@ -124,7 +135,7 @@ def main(*opts):
         return
 
     # always provided
-    os.environ['root'] = os.path.dirname(os.path.abspath(conf))
+    env['root'] = os.path.dirname(os.path.abspath(conf))
 
     args = [qemu]
     curr = []
@@ -136,7 +147,7 @@ def main(*opts):
                 continue
 
             if cs.startswith('IF '):
-                test(cond, cs.split()[1:])
+                test(env, cond, cs.split()[1:])
                 continue
 
             if cs.startswith('ENDIF'):
@@ -147,12 +158,11 @@ def main(*opts):
             if cond and not cond[-1]:
                 continue
 
-            sp = shlex.split(cs)
-            if not sp:
+            if not (sp := shlex.split(cs)):
                 continue
 
             if cs.startswith((' ', '\t')):
-                curr.append('='.join(list(map(lambda x: norm(x), sp[:2]))))
+                curr.append('='.join(list(map(lambda x: norm(env, x), sp[:2]))))
 
             else:
                 if curr:
@@ -167,14 +177,17 @@ def main(*opts):
     # especially for -S -s or -d ...
     args.extend(real[0 if flag else 1:])
 
-    if 'dbg' in os.environ:
+    if 'dbg' in env:
         args = ['gdb', '--args'] + args
 
-    if 'dry' in os.environ:
+    if 'dry' in env:
         print(' '.join(args))
     else:
-        kick(args)
+        return kick(env, args)
 
 
 if __name__ == '__main__':
-    main(*sys.argv[1:])
+    env = {}
+    env.update(os.environ)
+
+    runq(env, *sys.argv[1:])

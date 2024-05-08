@@ -41,31 +41,36 @@ CHAIN = [
 
 def run(work):
     misc = importlib.import_module('.work.misc', package = __package__)
-
-    with open('snap.cmd', 'w') as snap, open('flex.cmd', 'w') as flex:
-        for r in REQPS:
-            for c in CHAIN:
-                src = f'{work}_{r}_{c}'
-
-                snap.write(f'WORK_ARGS="{work} -r {r} -c {c}" ./snap {src}\n')
-
-                flex.write(f'./flex trace {src} && ./flex timing {src}\n')
-
     core = os.cpu_count() - 2
 
-    misc.para('snap.cmd', 'running snap', core)
+    #
+    snap = []
 
+    for r in REQPS:
+        for c in CHAIN:
+            snap.append((f'{work}_{r}_{c}', '', f'/bin/{work} -r {r} -c {c}'))
+
+    misc.para('running snap', core, misc.snap, snap)
+
+    #
     for a in ASSOC:
-        misc.para('flex.cmd', f'running {a}', core,
+        cfgs = ' '.join([
             '-mmu:dvlbsets', '1',
             '-mmu:dvlbways', a,
             '-mmu:vlbtest', 'true'
-        )
+        ])
+
+        flex = []
+
+        for r in REQPS:
+            for c in CHAIN:
+                flex.append((f'{work}_{r}_{c}', cfgs))
+
+        misc.para(f'running {a}', core, misc.comb, flex)
 
         dst = misc.prep(os.path.join('results', a))
 
         for r in REQPS:
             for c in CHAIN:
                 src = f'{work}_{r}_{c}'
-
                 misc.copy(src, os.path.join(dst, src))
