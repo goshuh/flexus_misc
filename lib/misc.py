@@ -68,7 +68,7 @@ def snap(snap, rarg = '', warg = ''):
     expt.sendline(warg)
 
     expt.expect_exact('INIT_DONE!!!')
-    time.sleep(1)
+    time.sleep(300)
 
     # ctrl-a
     expt.send('\001')
