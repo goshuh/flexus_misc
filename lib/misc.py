@@ -6,6 +6,12 @@ import shutil
 import subprocess
 
 
+def prep(src):
+    os.makedirs(src, exist_ok = True)
+
+    return src
+
+
 def copy(src, dst):
     shutil.move(os.path.join(src, 'adv'),               dst)
     shutil.move(os.path.join(src, 'trace.log'),         dst)

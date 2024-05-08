@@ -42,11 +42,11 @@ def run(work):
     misc = importlib.import_module('.work.misc', package = __package__)
 
     with open('snap.cmd', 'w') as snap, open('flex.cmd', 'w') as flex:
-        for i in ASSOC:
-            for j in CHAIN:
-                src = f'{work}_{i}_{j}'
+        for r in REQPS:
+            for c in CHAIN:
+                src = f'{work}_{r}_{c}'
 
-                snap.write(f'WORK_ARGS="{work} -r {i} -c {j}" ./snap {src}\n')
+                snap.write(f'WORK_ARGS="{work} -r {r} -c {c}" ./snap {src}\n')
 
                 flex.write(f'./flex trace {src} && ./flex timing {src}\n')
 
@@ -54,18 +54,17 @@ def run(work):
 
     misc.para('snap.cmd', 'running snap', core)
 
-    for i in ASSOC:
-        misc.para('flex.cmd', f'running {i}', core,
+    for a in ASSOC:
+        misc.para('flex.cmd', f'running {a}', core,
             '-mmu:dvlbsets', '1',
-            '-mmu:dvlbways', i,
+            '-mmu:dvlbways', a,
             '-mmu:vlbtest', 'true'
         )
 
-        src = f'{work}_{i}_{k}'
-        dst = os.path.join('results', i)
+        dst = misc.prep(os.path.join('results', a))
 
-        os.makedirs(dst, exist_ok = True)
+        for r in REQPS:
+            for c in CHAIN:
+                src = f'{work}_{r}_{c}'
 
-        for j in REQPS:
-            for k in CHAIN:
-                misc.copy(src, os.path.join(dst, src))
+                misc.copy(src, misc.prep(os.path.join(dst, src)))
