@@ -92,9 +92,8 @@ def flex(mode, snap, cfgs):
     os.environ['FLEXUS_CFG_OVERRIDE'] = cfgs
 
     runq.runq({
-         mode:  '1',
+         mode: snap,
         'wait': '1',
-        'snap': snap,
         'stdout': f'{snap}/{mode}.out',
         'stderr': '-'
     })
