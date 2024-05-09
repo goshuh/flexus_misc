@@ -57,13 +57,13 @@ class VLB {
 };
 
 static unsigned long to_int(const std::string &s) {
-  return strtoul(s.c_str(), NULL, 16);
+  return strtoul(s.c_str(), nullptr, 16);
 }
 
 static unsigned long to_int(const std::string &s, int begin, int end) {
   return strtoul(
       s.substr(begin, s.length() - begin + end).c_str(),
-      NULL,
+      nullptr,
       16);
 }
 
@@ -93,29 +93,35 @@ class Run {
   std::vector<VMA> vmas;
   std::list<VLB> vlbs;
   unsigned long csid;
-  const size_t lens = 4096;
+  size_t ways;
+
+  unsigned long acc;
+  unsigned long mis;
 
   Run()
-      : csid(0) {
+      : csid(0),
+        acc(0),
+        mis(0) {
+    auto env = getenv("WAYS");
+
+    ways = env == nullptr ? 0 : strtoul(env, nullptr, 10);
   }
 
-  bool handle_rst(const std::vector<std::string> &sp) {
+  int handle_rst(const std::vector<std::string> &sp) {
     vmas.clear();
-
-    return false;
+    return 0;
   }
 
-  bool handle_vma(const std::vector<std::string> &sp) {
+  int handle_vma(const std::vector<std::string> &sp) {
     auto base = to_int(sp[3], 1, -1);
     auto bound = to_int(sp[4], 0, -1);
     auto offs = to_int(sp[5]);
 
     vmas.emplace_back(base, bound, offs);
-
-    return false;
+    return 0;
   }
 
-  bool handle_pre(const std::vector<std::string> &sp) {
+  int handle_pre(const std::vector<std::string> &sp) {
     auto base = to_int(sp[3], 1, -1);
     auto bound = to_int(sp[4], 0, -1);
     auto attr = to_int(sp[5]);
@@ -123,22 +129,32 @@ class Run {
 
     for (const auto &v: vlbs)
       if (v.hit(base, ocid))
-        return true;
+        return 1;
 
     vlbs.emplace_back(base, bound, ocid, attr);
-    return false;
+    return 0;
   }
 
-  bool handle_hit(const std::vector<std::string> &sp) {
-    auto addr = to_int(sp[3].substr(2));
+  int handle_hit(const std::vector<std::string> &sp) {
+    acc++;
 
-    for (auto i = vlbs.begin(); i != vlbs.end(); i++)
+    auto addr = to_int(sp[3].substr(2));
+    auto flag = false;
+
+    for (auto i = vlbs.begin(); i != vlbs.end();)
       if (i->hit(addr, csid)) {
+        if (flag)
+          return 1;
+
+        flag = true;
+
         auto base = to_int(sp[4], 1, -1);
         auto bound = to_int(sp[5], 0, -1);
 
         if (i->base != base || i->bound != bound)
-          return true;
+          return 2;
+
+        auto next = std::next(i);
 
         if (i != vlbs.begin()) {
           auto v = *i;
@@ -147,114 +163,149 @@ class Run {
           vlbs.push_front(v);
         }
 
-        return false;
-      }
+        i = next;
 
-    return false;
+      } else
+        i++;
+
+    return 0;
   }
 
-  bool handle_mis(const std::vector<std::string> &sp) {
-#ifdef REAL
+  int handle_mis(const std::vector<std::string> &sp) {
+    acc++;
+
     auto addr = to_int(sp[3].substr(2));
 
-    for (const auto &v: vlbs)
-      if (v.hit(addr, csid))
-        return true;
-#endif
+    if (ways) {
+      for (const auto &v: vlbs)
+        if (v.hit(addr, csid))
+          return 1;
 
-    return false;
+      mis++;
+
+    } else {
+      auto flag = false;
+
+      for (const auto &v: vlbs)
+        if (v.hit(addr, csid)) {
+          if (flag)
+            return 2;
+
+          flag = true;
+        }
+
+      if (!flag)
+        mis++;
+    }
+
+    return 0;
   }
 
-  bool handle_ev(const std::vector<std::string> &sp) {
+  int handle_ev(const std::vector<std::string> &sp) {
     if (vlbs.empty())
-      return true;
+      return 1;
 
-#ifdef REAL
-    auto base = to_int(sp[4], 1, -1);
-    auto csid = to_int(sp[7]);
+    if (ways) {
+      auto base = to_int(sp[4], 1, -1);
+      auto csid = to_int(sp[7]);
 
-    auto v = vlbs.begin();
+      auto v = std::prev(vlbs.end());
 
-    if (v->base != base || v->csid != csid)
-      return true;
+      if (v->base != base || v->csid != csid)
+        return 2;
 
-    vlbs.erase(v);
-#endif
+      vlbs.erase(v);
+    }
 
-    return false;
+    return 0;
   }
 
-  bool handle_add(const std::vector<std::string> &sp) {
+  int handle_add(const std::vector<std::string> &sp) {
     auto addr = to_int(sp[3].substr(2));
     auto base = to_int(sp[4], 1, -1);
     auto bound = to_int(sp[5], 0, -1);
     auto attr = to_int(sp[6]);
+    auto ocid = to_int(sp[7]);
 
-#ifdef REAL
-    if (vlbs.size() > lens)
-      return true;
+    if (ways) {
+      if (vlbs.size() > ways)
+        return 1;
 
-    for (const auto &v: vlbs)
-      if (v.hit(addr, csid))
-        return true;
+      for (const auto &v: vlbs)
+        if (v.hit(addr, ocid))
+          return 2;
 
-    for (const auto &v: vlbs)
-      if (v.hit(base, csid))
-        return true;
+      for (const auto &v: vlbs)
+        if (v.hit(base, ocid))
+          return 3;
 
-    if (addr >= 0x2000000000) {
-      for (const auto &v: vmas)
-        if (v.hit(addr)) {
-          if (v.base != base || v.bound != bound || v.attr != attr)
-            return true;
-          break;
-        }
+      if (addr >= 0x2000000000) {
+        for (const auto &v: vmas)
+          if (v.hit(addr)) {
+            if (v.base != base || v.bound != bound || v.attr != attr)
+              return 4;
+            break;
+          }
+      }
+
+    } else {
+      for (const auto &v: vlbs)
+        if (v.hit(addr, ocid))
+          return 0;
+
+      for (const auto &v: vlbs)
+        if (v.hit(base, ocid))
+          return 0;
     }
-#else
-    for (const auto &v: vlbs)
-      if (v.hit(addr, csid))
-        return false;
 
-    for (const auto &v: vlbs)
-      if (v.hit(base, csid))
-        return false;
-#endif
-
-    vlbs.emplace_front(base, bound, csid, attr);
-    return false;
+    vlbs.emplace_front(base, bound, ocid, attr);
+    return 0;
   }
 
-  bool handle_clr(const std::vector<std::string> &sp) {
+  int handle_clr(const std::vector<std::string> &sp) {
     auto base = to_int(sp[4], 1, -1);
     auto bound = to_int(sp[5], 0, -1);
     auto ocid = to_int(sp[7]);
+    auto flag = false;
 
-    for (auto i = vlbs.begin(); i != vlbs.end(); i++)
+    for (auto i = vlbs.begin(); i != vlbs.end();)
       if (i->base == base && i->bound == bound && i->csid == ocid) {
-        vlbs.erase(i);
-        return false;
-      }
+        auto next = std::next(i);
 
-    return true;
+        vlbs.erase(i);
+        flag = true;
+
+        i = next;
+
+      } else
+        i++;
+
+    return flag ? 0 : 1;
   }
 
-  bool handle_inv(const std::vector<std::string> &sp) {
+  int handle_inv(const std::vector<std::string> &sp) {
     auto base = to_int(sp[4], 1, -1);
     auto bound = to_int(sp[5], 0, -1);
+    auto flag = false;
 
-    for (auto i = vlbs.begin(); i != vlbs.end(); i++)
+    for (auto i = vlbs.begin(); i != vlbs.end();)
       if (i->base == base && i->bound == bound) {
-        vlbs.erase(i);
-        return false;
-      }
+        auto next = std::next(i);
 
-    return true;
+        vlbs.erase(i);
+        flag = true;
+
+        i = next;
+
+      } else
+        i++;
+
+    return flag ? 0 : 1;
   }
 
-  bool handle_cid(const std::vector<std::string> &sp) {
+  int handle_cid(const std::vector<std::string> &sp) {
     csid = to_int(sp[3]);
-
-    return false;
+    return 0;
   }
 
   void report() {
@@ -263,14 +314,15 @@ class Run {
     for (const auto &v: vlbs)
       maps[v.csid].insert(v.base);
 
-    printf("vlbs: %ld\n", vlbs.size());
-
     for (const auto &m: maps) {
-      printf(" csid: %lx\n", m.first);
+      printf("csid: %lx\n", m.first);
 
       for (const auto &s: m.second)
         printf("  %lx\n", s);
     }
+
+    printf("vlbs: %ld\n", vlbs.size());
+    printf("miss: %lf (%ld / %ld)\n", (double)(mis) / (double)(acc), mis, acc);
   }
 };
 
@@ -285,7 +337,7 @@ static void parse(const std::string &filename) {
   std::string line;
   while (std::getline(file, line)) {
     auto sp = split(line, ' ');
-    auto ch = false;
+    auto ch = 0;
 
     if (sp.size() < 1)
       printf("%ld:%s\n", nr + 1, line.c_str());
@@ -322,7 +374,7 @@ static void parse(const std::string &filename) {
       printf("%ld:%s\n", nr + 1, line.c_str());
 
     if (ch) {
-      printf("%lu FAILED\n", nr + 1);
+      printf("%lu FAILED: %d\n", nr + 1, ch);
       break;
     }
 
