@@ -7,10 +7,11 @@ import importlib
 
 
 def parse_args():
-    args = argparse.ArgumentParser(description='run')
+    args = argparse.ArgumentParser(description = 'run')
 
-    args.add_argument('-e', default='media')
-    args.add_argument('-x', default='vws')
+    args.add_argument('-e', default = 'media')
+    args.add_argument('-x', default = 'vws')
+    args.add_argument('-d', action  = 'store_true')
 
     return args.parse_args()
 
@@ -36,5 +37,6 @@ if __name__ == '__main__':
 
     prepare(os.path.join('exp', args.x, 'work'))
 
-    xmod = importlib.import_module(f'exp.{args.x}.run')
-    xmod.run(args.e)
+    if not args.d:
+        xmod = importlib.import_module(f'exp.{args.x}.run')
+        xmod.run(args.e)
