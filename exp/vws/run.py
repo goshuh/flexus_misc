@@ -8,18 +8,22 @@ from .work import misc
 
 
 REQPS = [
+    20000,
     40000,
+    60000,
     80000,
+    10000,
     120000,
+    140000,
     160000,
-    200000
+    180000
 ]
 
 CHAIN = [
     256,
-#   64,
+    64,
     16,
-#   4,
+    4,
     1
 ]
 
@@ -76,7 +80,7 @@ def run(trans, work):
         for c in CHAIN:
             flex.append((f'{work}_{trans}_{r}_{c}', cfgs))
 
-    tag = f'{misc.kmgt(args.s)}_{misc.kmgt(args.w)}-{misc.kmgt(args.i)}-{misc.kmgt(args.j)}'
+    tag = f'{misc.kmgt(args.s)}-{misc.kmgt(args.w)}_{misc.kmgt(args.i)}_{misc.kmgt(args.j)}'
 
     misc.para(f'running {tag}', core, misc.comb, flex)
 

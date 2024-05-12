@@ -5,7 +5,7 @@ set -e
 cd ${0:A:h:h}
 
 exp=vws
-dir=1_8k-32k-2m
+dir=1-8k_32k_2m
 bin=media
 mod=0
 
@@ -31,7 +31,7 @@ done
 mkdir -p tmp
 
 aux/calc_lat "exp/${exp}/work/results/${dir}/${bin}_${mod}_\\d+_\\d+/timing.bin$" \
-    > tmp/${dir}.lat.csv
+    > tmp/${mod}.${dir}.lat.csv
 
 aux/calc_pmc "exp/${exp}/work/results/${dir}/${bin}_${mod}_\\d+_\\d+/timing.gz$" \
     'sys-uarch-Commits$'     \
@@ -45,4 +45,4 @@ aux/calc_pmc "exp/${exp}/work/results/${dir}/${bin}_${mod}_\\d+_\\d+/timing.gz$"
     'sys-L2-uat.*'           \
     'sys-mmu-dtlb-access'    \
     'sys-mmu-dtlb-hit'       \
-    > tmp/${dir}.pmc.csv
+    > tmp/${mod}.${dir}.pmc.csv
