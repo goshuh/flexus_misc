@@ -1,0 +1,48 @@
+#!/usr/bin/zsh
+
+set -e
+
+cd ${0:A:h:h}
+
+exp=vws
+dir=1_8k-32k-2m
+bin=media
+mod=0
+
+while (( ${#} )); do
+    case ${1} in
+        -e=*)
+            exp=${1##*=}
+            ;;
+        -d=*)
+            dir=${1##*=}
+            ;;
+        -b=*)
+            bin=${1##*=}
+            ;;
+        -m=*)
+            mod=${1##*=}
+            ;;
+    esac
+
+    shift
+done
+
+mkdir -p tmp
+
+aux/calc_lat "exp/${exp}/work/results/${dir}/${bin}_${mod}_\\d+_\\d+/timing.bin$" \
+    > tmp/${dir}.lat.csv
+
+aux/calc_pmc "exp/${exp}/work/results/${dir}/${bin}_${mod}_\\d+_\\d+/timing.gz$" \
+    'sys-uarch-Commits$'     \
+    'sys-ufetch-FetchAccess' \
+    'sys-ufetch-Hits'        \
+    'sys-L1d-Accesses$'      \
+    'sys-L1d-Hits$'          \
+    'sys-L2-Fetch.*'         \
+    'sys-L2-Read.*'          \
+    'sys-L2-Write.*'         \
+    'sys-L2-uat.*'           \
+    'sys-mmu-dtlb-access'    \
+    'sys-mmu-dtlb-hit'       \
+    > tmp/${dir}.pmc.csv

@@ -9,7 +9,38 @@ import multiprocessing
 from . import runq
 
 
+def pow2(src):
+    src = src.replace(' ', '')
+    mul = 1
+
+    match src[-1]:
+        case 'k' | 'K':
+            mul = 1024
+        case 'm' | 'M':
+            mul = 1024 ** 2
+        case 'g' | 'G':
+            mul = 1024 ** 3
+        case 't' | 'T':
+            mul = 1024 ** 4
+
+    return int(src[:-1]) * mul
+
+
+def kmgt(src):
+    pow = 0
+    fix = ['', 'k', 'm', 'g', 't']
+
+    while src >= 1024:
+        src = src // 1024
+        pow = pow +  1
+
+    return f'{src}{fix[pow]}'
+
+
 def prep(src):
+    if os.path.exists(src):
+        shutil.rmtree(src)
+
     os.makedirs(src, exist_ok = True)
 
     return src
@@ -44,13 +75,16 @@ def para(info, core, func, args):
 
     with multiprocessing.Pool(processes = core) as pool:
         for a in args:
-            pool.apply(func, args = a)
+            pool.apply_async(func, args = a)
 
         pool.close()
         pool.join()
 
 
 def snap(snap, rarg = '', warg = ''):
+    if os.path.isfile(os.path.join(snap, 'vmstate')):
+        return
+
     os.makedirs(snap, exist_ok = True)
 
     with open(os.path.join(snap, 'snap.cfg'), 'w') as fd:
@@ -87,6 +121,8 @@ def snap(snap, rarg = '', warg = ''):
 def flex(mode, snap, cfgs):
     if mode == 'timing':
         snap = os.path.join(snap, 'adv')
+    elif os.path.isfile(os.path.join(snap, 'adv', 'vmstate')):
+        return
 
     os.environ['FLEXUS_LOG_OVERRIDE'] = f'{mode}.log'
     os.environ['FLEXUS_CFG_OVERRIDE'] = cfgs
@@ -100,5 +136,5 @@ def flex(mode, snap, cfgs):
 
 
 def comb(snap, cfgs):
-    flex('trace',  snap, cfgs)
-    flex('timing', snap, cfgs)
+    flex('trace',  snap, cfgs[0])
+    flex('timing', snap, cfgs[1])

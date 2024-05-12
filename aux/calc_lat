@@ -73,9 +73,9 @@ def parse(dic, fn):
     for dn in fn.split('/'):
         sp = dn.split('_')
 
-        if len(sp) == 3:
-            l = int(sp[1])
-            n = int(sp[2])
+        if len(sp) == 4:
+            l = int(sp[2])
+            n = int(sp[3])
             break
 
     if not l:

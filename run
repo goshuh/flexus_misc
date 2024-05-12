@@ -9,11 +9,12 @@ import importlib
 def parse_args():
     args = argparse.ArgumentParser(description = 'run')
 
+    args.add_argument('-t', default = '0')
     args.add_argument('-e', default = 'media')
     args.add_argument('-x', default = 'vws')
     args.add_argument('-d', action  = 'store_true')
 
-    return args.parse_args()
+    return args.parse_known_args()[0]
 
 
 def prepare(work):
@@ -39,4 +40,4 @@ if __name__ == '__main__':
 
     if not args.d:
         xmod = importlib.import_module(f'exp.{args.x}.run')
-        xmod.run(args.e)
+        xmod.run(args.t, args.e)
