@@ -23,7 +23,10 @@ def pow2(src):
         case 't' | 'T':
             mul = 1024 ** 4
 
-    return int(src[:-1]) * mul
+    if mul == 1:
+        return int(src)
+    else:
+        return int(src[:-1]) * mul
 
 
 def kmgt(src):

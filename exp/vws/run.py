@@ -12,7 +12,7 @@ REQPS = [
     40000,
     60000,
     80000,
-    10000,
+    100000,
     120000,
     140000,
     160000,
@@ -39,7 +39,7 @@ def parse_args():
     return args.parse_known_args()[0]
 
 
-def run(trans, work):
+def run(t, work):
     args = parse_args()
     core = os.cpu_count()
 
@@ -48,7 +48,7 @@ def run(trans, work):
 
     for r in REQPS:
         for c in CHAIN:
-            snap.append((f'{work}_{trans}_{r}_{c}', '', f'/bin/{work} -t {trans} -r {r} -c {c}'))
+            snap.append((f'{work}_{t}_{r}_{c}', '', f'/bin/{work} -t {t} -r {r} -c {c}'))
 
     misc.para('running snap', core, misc.snap, snap)
 
@@ -78,7 +78,7 @@ def run(trans, work):
 
     for r in REQPS:
         for c in CHAIN:
-            flex.append((f'{work}_{trans}_{r}_{c}', cfgs))
+            flex.append((f'{work}_{t}_{r}_{c}', cfgs))
 
     tag = f'{misc.kmgt(args.s)}-{misc.kmgt(args.w)}_{misc.kmgt(args.i)}_{misc.kmgt(args.j)}'
 
@@ -88,5 +88,5 @@ def run(trans, work):
 
     for r in REQPS:
         for c in CHAIN:
-            src = f'{work}_{trans}_{r}_{c}'
+            src = f'{work}_{t}_{r}_{c}'
             misc.copy(src, os.path.join(dst, src))
