@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3
 
 import os
 import sys
@@ -59,6 +59,42 @@ def traverse(dir):
     yield from iterate('.', 0)
 
 
+def trans(dic):
+    ret = {}
+
+    def total(*arr):
+        return sum(map(lambda x: int(dic[x]), arr))
+
+    l1i_hit = total('sys-ufetch-Hits')
+    l1i_acc = total('sys-ufetch-FetchAccess')
+
+    l1d_hit = total('sys-L1d-Hits')
+    l1d_acc = total('sys-L1d-Accesses')
+
+    l2i_hit = total('sys-L2-FetchHit')
+    l2i_acc = total('sys-L2-FetchMissMemory',
+                    'sys-L2-FetchMissPeer') + l2i_hit
+
+    l2d_hit = total('sys-L2-ReadHit',
+                    'sys-L2-WriteHit')
+    l2d_acc = total('sys-L2-ReadMissMemory',
+                    'sys-L2-ReadMissPeer',
+                    'sys-L2-WriteMissInvalidatesAndData',
+                    'sys-L2-WriteMissInvalidatesOnly',
+                    'sys-L2-WriteMissMemory') + l2d_hit
+
+    vlb_hit = total('sys-mmu-dtlb-hit')
+    vlb_acc = total('sys-mmu-dtlb-access')
+
+    ret['l1i-miss'] = 1.0 - l1i_hit / l1i_acc
+    ret['l1d-miss'] = 1.0 - l1d_hit / l1d_acc
+    ret['l2i-miss'] = 1.0 - l2i_hit / l2i_acc
+    ret['l2d-miss'] = 1.0 - l2d_hit / l2d_acc
+    ret['vlb-miss'] = 1.0 - vlb_hit / vlb_acc
+
+    return ret
+
+
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         sys.exit(f'usage: {sys.argv[0]} <dir> [pat...]')
@@ -69,14 +105,12 @@ if __name__ == '__main__':
     for fn in traverse(sys.argv[1]):
         parse(dir, dic, fn)
 
-    pat = [re.compile(p) for p in sys.argv[2:]]
     out = []
 
     for l, lds in dic.items():
         for n, nds in lds.items():
-            for k, v in nds.items():
-                if not pat or any(p.match(k) for p in pat):
-                    out.append([l, n, k, v])
+            for k, v in trans(nds).items():
+                out.append((k, n, l, v))
 
     for o in sorted(out):
         print(','.join(map(str, o)))

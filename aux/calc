@@ -33,16 +33,5 @@ mkdir -p tmp
 aux/calc_lat "exp/${exp}/work/results/${dir}/${bin}_${mod}_\\d+_\\d+/timing.bin$" \
     > tmp/${mod}.${dir}.lat.csv
 
-aux/calc_pmc "exp/${exp}/work/results/${dir}/${bin}_${mod}_\\d+_\\d+/timing.gz$" \
-    'sys-uarch-Commits$'     \
-    'sys-ufetch-FetchAccess' \
-    'sys-ufetch-Hits'        \
-    'sys-L1d-Accesses$'      \
-    'sys-L1d-Hits$'          \
-    'sys-L2-Fetch.*'         \
-    'sys-L2-Read.*'          \
-    'sys-L2-Write.*'         \
-    'sys-L2-uat.*'           \
-    'sys-mmu-dtlb-access'    \
-    'sys-mmu-dtlb-hit'       \
+aux/calc_pmc "exp/${exp}/work/results/${dir}/${bin}_${mod}_\\d+_\\d+/timing.gz$"  \
     > tmp/${mod}.${dir}.pmc.csv
