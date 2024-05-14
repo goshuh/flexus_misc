@@ -21,12 +21,20 @@ def parse(dic, fn):
         return
 
     # 32 cores at most
-    real = [[] for _ in range(32)]
     fake = [[] for _ in range(32)]
-    func = [[] for _ in range(32)]
+    real = [[] for _ in range(32)]
+    user = [[] for _ in range(32)]
+    iret = [[] for _ in range(32)]
 
     info = '@QQ'
     size = struct.calcsize(info)
+
+    flag = 1
+    init = 0
+    prev = 0
+    offs = 0
+
+    print(fn, file = sys.stderr)
 
     with open(fn, 'rb') as fd:
         while True:
@@ -44,18 +52,50 @@ def parse(dic, fn):
             time, core, _, key, val = struct.unpack('@QQQQQ', data)
 
             match key:
-                case 4:
-                    real[core].append(val)
-
-                case 5:
-                    fake[core].append(val)
-
                 case 6:
-                    func[core].append(val)
+                    if flag:
+                        flag |= 0x02
 
-    print(fn, file = sys.stderr)
+                    init = val
 
-    def output(cds, name, arr):
+                case 7:
+                    if flag:
+                        flag |= 0x04
+                    else:
+                        fake[core].append(val - init)
+
+                    prev = val
+
+                case 8:
+                    if flag:
+                        flag |= 0x08
+
+                        if (diff := time - prev) > 0:
+                            offs = diff
+                            print(f'  {time} set {offs}')
+                    else:
+                        if (diff := time - prev) < offs:
+                            offs = max(0, diff)
+                            print(f'  {time} dec {offs}')
+
+                        real[core].append(time - init - offs)
+
+                case 9:
+                    if flag:
+                        flag |= 0x10
+                    else:
+                        user[core].append(val)
+
+                case 10:
+                    if flag:
+                        flag |= 0x20
+                    else:
+                        iret[core].append(val)
+
+            if flag == 0x3f:
+                flag = 0
+
+    def output(c, cds, name, arr):
         if not arr:
             return
 
@@ -68,7 +108,7 @@ def parse(dic, fn):
             np.median(arr),
             np.percentile(arr, 99)]
 
-        with open(f'{fn}-{name}.out', 'w') as fd:
+        with open(f'{os.path.splitext(fn)[0]}-{c}-{name}.out', 'w') as fd:
             for a in arr:
                 print(a, file = fd)
 
@@ -83,18 +123,20 @@ def parse(dic, fn):
             break
 
     if not l:
-        return
+        l = 0
+        n = 0
 
     lds = dic.setdefault(l, {})
     nds = lds.setdefault(n, {})
 
     for c in range(32):
-        if real[c] or fake[c]:
+        if fake[c] or real[c] or user[c] or iret[c]:
             cds = nds.setdefault(c, {})
 
-            output(cds, 'real', real[c])
-            output(cds, 'fake', fake[c])
-            output(cds, 'func', func[c])
+            output(c, cds, 'fake', fake[c])
+            output(c, cds, 'real', real[c])
+            output(c, cds, 'user', user[c])
+            output(c, cds, 'iret', iret[c])
 
 
 def traverse(dir):

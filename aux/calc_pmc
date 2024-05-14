@@ -21,7 +21,8 @@ def parse(dir, dic, fn):
             break
 
     if not l:
-        return
+        l = 0
+        n = 0
 
     lds = dic.setdefault(l, {})
     nds = lds.setdefault(n, {})

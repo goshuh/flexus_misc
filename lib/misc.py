@@ -4,7 +4,7 @@ import os
 
 import time
 import shutil
-import multiprocessing
+import signal
 
 from . import runq
 
@@ -73,15 +73,60 @@ def copy(src, dst):
          os.path.join(dst, 'timing.cfg'))
 
 
-def para(info, core, func, args):
+def para(info, core, func, args, deps):
     print(info)
 
-    with multiprocessing.Pool(processes = core) as pool:
-        for a in args:
-            pool.apply_async(func, args = a)
+    # the multiprocessing.Pool sucks
+    pids = {}
+    curr = []
+    rmap = [[] for _ in range(len(args))]
 
-        pool.close()
-        pool.join()
+    def wait():
+        i = pids.pop(os.waitpid(-1, 0)[0])
+
+        for r in rmap[i]:
+            deps[r].remove(i)
+
+            if not deps[r]:
+                curr.append((r, args[r]))
+
+    try:
+        for i, dep in enumerate(deps):
+            if isinstance(dep, (int, list)):
+                dep = deps[i] = set(i)
+
+            for d in dep:
+                rmap[d].append(i)
+
+        for i, (arg, dep) in enumerate(zip(args, deps)):
+            if not dep:
+                curr.append((i, arg))
+
+        while curr:
+            while curr:
+                if len(pids) == core:
+                    wait()
+
+                i, arg = curr.pop()
+
+                if not (pid := os.fork()):
+                    print(f'  starting {func.__name__}({", ".join(arg)})')
+
+                    func(*arg)
+                    os._exit(0)
+
+                pids[pid] = i
+
+            while pids:
+                wait()
+
+                if curr:
+                    break
+
+    except KeyboardInterrupt:
+        for pid in pids:
+            os.kill(pid, signal.SIGKILL)
+            os.waitpid(pid, 0)
 
 
 def snap(snap, rarg = '', warg = ''):
@@ -121,23 +166,20 @@ def snap(snap, rarg = '', warg = ''):
     expt.sendline('q')
 
 
-def flex(mode, snap, cfgs):
+def flex(snap, mode, cfgs):
     if mode == 'timing':
         snap = os.path.join(snap, 'adv')
     elif os.path.isfile(os.path.join(snap, 'adv', 'vmstate')):
         return
+
+    if not os.path.isdir(snap):
+        sys.exit(f'ERROR: {snap} does not exist')
 
     os.environ['FLEXUS_LOG_OVERRIDE'] = f'{mode}.log'
     os.environ['FLEXUS_CFG_OVERRIDE'] = cfgs
 
     runq.runq({
          mode: snap,
-        'wait': '1',
         'stdout': f'{snap}/{mode}.out',
-        'stderr': '-'
+        'stderr':  '-'
     })
-
-
-def comb(snap, cfgs):
-    flex('trace',  snap, cfgs[0])
-    flex('timing', snap, cfgs[1])

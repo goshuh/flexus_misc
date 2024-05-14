@@ -8,11 +8,11 @@ from .work import misc
 
 
 REQPS = [
-    20000,
-    40000,
-    60000,
-    80000,
-    100000,
+#   20000,
+#   40000,
+#   60000,
+#   80000,
+#   100000,
     120000,
     140000,
     160000,
@@ -20,7 +20,7 @@ REQPS = [
 ]
 
 CHAIN = [
-    256,
+#   256,
     64,
     16,
     4,
@@ -45,44 +45,49 @@ def run(t, work):
 
     #
     snap = []
+    sdep = []
 
     for r in REQPS:
         for c in CHAIN:
             snap.append((f'{work}_{t}_{r}_{c}', '', f'/bin/{work} -t {t} -r {r} -c {c}'))
+            sdep.append({})
 
-    misc.para('running snap', core, misc.snap, snap)
+    misc.para('running snap', core, misc.snap, snap, sdep)
 
     #
     sets = args.j // (64 * 16)
 
-    cfgs = (
-        ' '.join(map(str, [
-            '-mmu:dvlbsets', args.s,
-            '-mmu:dvlbways', args.w,
-            '-mmu:vlbtest', 'true',
-            '-L1d:size', args.i,
-            '-L2:size', args.j,
-            '-L2:directory_type', f'Standard:sets={sets}:assoc=16:repl=lru',
-        ])),
-        ' '.join(map(str, [
-            '-mmu:dvlbsets', args.s,
-            '-mmu:dvlbways', args.w,
-            '-mmu:vlbtest', 'true',
-            '-L1d:array_config', f'STD:size={args.i}:assoc=8:repl=lru',
-            '-L2:array_config', f'STD:total_sets={sets}:assoc=16:repl=lru',
-            '-L2:dir_config', f'sets={sets}:assoc=16'
-        ]))
-    )
+    farg  = ' '.join(map(str, [
+        '-mmu:dvlbsets',        args.s,
+        '-mmu:dvlbways',        args.w,
+        '-mmu:vlbtest',        'true',
+        '-L1d:size',            args.i,
+        '-L2:size',             args.j,
+        '-L2:directory_type', f'Standard:sets={sets}:assoc=16:repl=lru',
+    ]))
+    targ = ' '.join(map(str, [
+        '-mmu:dvlbsets',        args.s,
+        '-mmu:dvlbways',        args.w,
+        '-mmu:vlbtest',        'true',
+        '-L1d:array_config',  f'STD:size={args.i}:assoc=8:repl=lru',
+        '-L2:array_config',   f'STD:total_sets={sets}:assoc=16:repl=lru',
+        '-L2:dir_config',     f'sets={sets}:assoc=16'
+    ]))
 
     flex = []
+    fdep = []
 
     for r in REQPS:
         for c in CHAIN:
-            flex.append((f'{work}_{t}_{r}_{c}', cfgs))
+            flex.append((f'{work}_{t}_{r}_{c}', 'trace',  farg))
+            flex.append((f'{work}_{t}_{r}_{c}', 'timing', targ))
+
+            fdep.append({})
+            fdep.append({len(fdep) - 1})
 
     tag = f'{misc.kmgt(args.s)}-{misc.kmgt(args.w)}_{misc.kmgt(args.i)}_{misc.kmgt(args.j)}'
 
-    misc.para(f'running {tag}', core, misc.comb, flex)
+    misc.para(f'running {tag}', core, misc.flex, flex, fdep)
 
     dst = misc.prep(os.path.join('results', tag))
 

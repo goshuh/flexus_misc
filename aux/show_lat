@@ -7,19 +7,31 @@ import matplotlib.pyplot as pp
 
 
 def parse(fn):
-    real = []
+    fn = os.path.splitext(fn)[0]
+
     fake = []
+    real = []
+    user = []
+    iret = []
 
-    with open(fn + '-real.out') as fd:
-        real = list(map(int, fd.readlines()))
-
-    with open(fn + '-fake.out') as fd:
+    with open(f'{fn}-0-fake.out') as fd:
         fake = list(map(int, fd.readlines()))
 
-    indx = list(range(len(real)))
+    with open(f'{fn}-0-real.out') as fd:
+        real = list(map(int, fd.readlines()))
 
-    pp.plot(indx, real, label = 'real')
-    pp.plot(indx, fake, label = 'fake')
+    with open(f'{fn}-0-user.out') as fd:
+        user = list(map(int, fd.readlines()))
+
+    with open(f'{fn}-0-iret.out') as fd:
+        iret = list(map(int, fd.readlines()))
+
+    x = list(range(len(real)))
+
+    pp.plot(x, fake, label = 'fake')
+    pp.plot(x, real, label = 'real')
+    pp.plot(x, user, label = 'user')
+    pp.plot(x, iret, label = 'iret')
 
     pp.legend()
     pp.show()

@@ -1,0 +1,40 @@
+#!/usr/bin/python3
+
+import os
+import sys
+
+import matplotlib.pyplot as pp
+
+
+def parse(fn):
+    dic = {}
+
+    with open(fn + '-func.out') as fd:
+        for cs in fd:
+            val = int(cs.strip())
+
+            c = val >> 32
+            t = val &  0xffffffff
+
+            cds = dic.setdefault(c, {})
+
+            cds[t] = cds.get(t, 0) + 1
+
+    idx = list(range(max(map(len, dic.values()))))
+
+    for c, cds in dic.items():
+        pp.plot(idx, sorted(cds.values(), reverse = True) + [0] * (len(idx) - len(cds)), label = str(c))
+
+#   pp.xscale('log')
+#   pp.yscale('log')
+
+    pp.legend()
+    pp.show()
+
+
+if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        sys.exit(f'usage: {sys.argv[0]} <out>')
+
+    parse(sys.argv[1])
+
