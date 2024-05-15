@@ -42,9 +42,6 @@ def kmgt(src):
 
 
 def prep(src):
-    if os.path.exists(src):
-        shutil.rmtree(src)
-
     os.makedirs(src, exist_ok = True)
 
     return src
