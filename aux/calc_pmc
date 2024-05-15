@@ -60,32 +60,82 @@ def traverse(dir):
     yield from iterate('.', 0)
 
 
-def trans(dic):
+def trans(mod, dic):
     ret = {}
 
     def total(*arr):
         return sum(map(lambda x: int(dic[x]), arr))
 
-    l1i_hit = total('sys-ufetch-Hits')
-    l1i_acc = total('sys-ufetch-FetchAccess')
+    if mod == 'timing':
+        l1i_hit = total('sys-ufetch-Hits')
+        l1i_acc = total('sys-ufetch-FetchAccess')
 
-    l1d_hit = total('sys-L1d-Hits')
-    l1d_acc = total('sys-L1d-Accesses')
+        l1d_hit = total('sys-L1d-Hits')
+        l1d_acc = total('sys-L1d-Accesses')
 
-    l2i_hit = total('sys-L2-FetchHit')
-    l2i_acc = total('sys-L2-FetchMissMemory',
-                    'sys-L2-FetchMissPeer') + l2i_hit
+        l2i_hit = total('sys-L2-FetchHit')
+        l2i_acc = total('sys-L2-FetchMissMemory',
+                        'sys-L2-FetchMissPeer') + l2i_hit
 
-    l2d_hit = total('sys-L2-ReadHit',
-                    'sys-L2-WriteHit')
-    l2d_acc = total('sys-L2-ReadMissMemory',
-                    'sys-L2-ReadMissPeer',
-                    'sys-L2-WriteMissInvalidatesAndData',
-                    'sys-L2-WriteMissInvalidatesOnly',
-                    'sys-L2-WriteMissMemory') + l2d_hit
+        l2d_hit = total('sys-L2-ReadHit',
+                        'sys-L2-WriteHit')
+        l2d_acc = total('sys-L2-ReadMissMemory',
+                        'sys-L2-ReadMissPeer',
+                        'sys-L2-WriteMissInvalidatesAndData',
+                        'sys-L2-WriteMissInvalidatesOnly',
+                        'sys-L2-WriteMissMemory') + l2d_hit
 
-    vlb_hit = total('sys-mmu-dtlb-hit')
-    vlb_acc = total('sys-mmu-dtlb-access')
+        vlb_hit = total('sys-mmu-dtlb-hit')
+        vlb_acc = total('sys-mmu-dtlb-access')
+
+        ret['mem-l1'    ] = total('sys-uarch-memAtL1')
+        ret['mem-l1-lat'] = total('sys-uarch-memAtL1Lat')
+        ret['mem-l2'    ] = total('sys-uarch-memAtL2')
+        ret['mem-l2-lat'] = total('sys-uarch-memAtL2Lat')
+        ret['mem-mc'    ] = total('sys-uarch-memAtMC')
+        ret['mem-mc-lat'] = total('sys-uarch-memAtMCLat')
+
+        ret['uat-l1'    ] = total('sys-uarch-uatAtL1')
+        ret['uat-l1-lat'] = total('sys-uarch-uatAtL1Lat')
+        ret['uat-l2'    ] = total('sys-uarch-uatAtL2')
+        ret['uat-l2-lat'] = total('sys-uarch-uatAtL2Lat')
+        ret['uat-mc'    ] = total('sys-uarch-uatAtMC')
+        ret['uat-mc-lat'] = total('sys-uarch-uatAtMCLat')
+
+    else:
+        l1i_hit = total('sys-L1i-Hits:Fetch:Exclusive',
+                        'sys-L1i-Hits:Fetch:Migratory',
+                        'sys-L1i-Hits:Fetch:Modified',
+                        'sys-L1i-Hits:Fetch:Owned',
+                        'sys-L1i-Hits:Fetch:Shared')
+        l1i_acc = total('sys-L1i-Misses:Fetch:Invalid') + l1i_hit
+
+        l1d_hit = total('sys-L1d-Hits:Read:Exclusive',
+                        'sys-L1d-Hits:Read:Migratory',
+                        'sys-L1d-Hits:Read:Modified',
+                        'sys-L1d-Hits:Read:Owned',
+                        'sys-L1d-Hits:Read:Shared',
+                        'sys-L1d-Hits:Write:Exclusive',
+                        'sys-L1d-Hits:Write:Migratory',
+                        'sys-L1d-Hits:Write:Modified')
+        l1d_acc = total('sys-L1d-Misses:Read:Invalid',
+                        'sys-L1d-Misses:Write:Invalid',
+                        'sys-L1d-Misses:Write:Owned',
+                        'sys-L1d-Misses:Write:Shared') + l1d_hit
+
+        l2i_hit = total('sys-L2-Hits:Fetch')
+        l2i_acc = total('sys-L2-Misses:Onchip:Fetch',
+                        'sys-L2-Misses:Offchip:Fetch') + l2i_hit
+
+        l2d_hit = total('sys-L2-Hits:Read',
+                        'sys-L2-Hits:Write')
+        l2d_acc = total('sys-L2-Misses:Onchip:Read',
+                        'sys-L2-Misses:Onchip:Write',
+                        'sys-L2-Misses:Offchip:Read',
+                        'sys-L2-Misses:Offchip:Write') + l2d_hit
+
+        vlb_hit = total('sys-mmu-dtlb-hit')
+        vlb_acc = total('sys-mmu-dtlb-access')
 
     ret['l1i-miss'] = 1.0 - l1i_hit / l1i_acc
     ret['l1d-miss'] = 1.0 - l1d_hit / l1d_acc
@@ -97,8 +147,8 @@ def trans(dic):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        sys.exit(f'usage: {sys.argv[0]} <dir> [pat...]')
+    if len(sys.argv) < 3:
+        sys.exit(f'usage: {sys.argv[0]} <dir> <mod>')
 
     dic = {}
     dir = os.path.dirname(sys.argv[0])
@@ -106,11 +156,12 @@ if __name__ == '__main__':
     for fn in traverse(sys.argv[1]):
         parse(dir, dic, fn)
 
+    mod = sys.argv[2]
     out = []
 
     for l, lds in dic.items():
         for n, nds in lds.items():
-            for k, v in trans(nds).items():
+            for k, v in trans(mod, nds).items():
                 out.append((k, n, l, v))
 
     for o in sorted(out):

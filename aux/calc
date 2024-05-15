@@ -7,7 +7,8 @@ cd ${0:A:h:h}
 exp=vws
 dir=1-8k_32k_2m
 bin=media
-mod=0
+tds=0
+mod=timing
 
 while (( ${#} )); do
     case ${1} in
@@ -20,6 +21,9 @@ while (( ${#} )); do
         -b=*)
             bin=${1##*=}
             ;;
+        -t=*)
+            tds=${1##*=}
+            ;;
         -m=*)
             mod=${1##*=}
             ;;
@@ -30,8 +34,8 @@ done
 
 mkdir -p tmp
 
-aux/calc_lat "exp/${exp}/work/results/${dir}/${bin}_${mod}_\\d+_\\d+/timing.bin$" \
-    > tmp/${mod}.${dir}.lat.csv
+aux/calc_lat "exp/${exp}/work/results/${dir}/${bin}_${tds}_\\d+_\\d+/${mod}.bin$"       \
+    > tmp/${tds}.${dir}.lat.csv
 
-aux/calc_pmc "exp/${exp}/work/results/${dir}/${bin}_${mod}_\\d+_\\d+/timing.gz$"  \
-    > tmp/${mod}.${dir}.pmc.csv
+aux/calc_pmc "exp/${exp}/work/results/${dir}/${bin}_${tds}_\\d+_\\d+/${mod}.gz$" ${mod} \
+    > tmp/${tds}.${dir}.pmc.csv

@@ -32,6 +32,7 @@ def parse(fn):
     pp.plot(x, real, label = 'real')
     pp.plot(x, user, label = 'user')
     pp.plot(x, iret, label = 'iret')
+    pp.ylim(0, 1e6)
 
     pp.legend()
     pp.show()

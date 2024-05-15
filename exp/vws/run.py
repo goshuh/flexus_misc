@@ -8,15 +8,13 @@ from .work import misc
 
 
 REQPS = [
-#   20000,
-#   40000,
-#   60000,
+    20000,
+    40000,
+    60000,
 #   80000,
-#   100000,
-    120000,
-    140000,
-    160000,
-    180000
+#   120000,
+#   160000,
+#   200000
 ]
 
 CHAIN = [
@@ -36,6 +34,10 @@ def parse_args():
     args.add_argument('-i', type = misc.pow2, default = 32768)
     args.add_argument('-j', type = misc.pow2, default = 2097152)
 
+    args.add_argument('-r', type = int, required = False)
+    args.add_argument('-c', type = int, required = False)
+    args.add_argument('-q', type = int, default  = 3)
+
     return args.parse_known_args()[0]
 
 
@@ -47,12 +49,18 @@ def run(t, work):
     snap = []
     sdep = []
 
-    for r in REQPS:
-        for c in CHAIN:
+    rarr = [args.r] if args.r else REQPS
+    carr = [args.c] if args.c else CHAIN
+
+    for r in rarr:
+        for c in carr:
             snap.append((f'{work}_{t}_{r}_{c}', '', f'/bin/{work} -t {t} -r {r} -c {c}'))
             sdep.append({})
 
     misc.para('running snap', core, misc.snap, snap, sdep)
+
+    if args.q <= 1:
+        return
 
     #
     sets = args.j // (64 * 16)
@@ -77,13 +85,15 @@ def run(t, work):
     flex = []
     fdep = []
 
-    for r in REQPS:
-        for c in CHAIN:
-            flex.append((f'{work}_{t}_{r}_{c}', 'trace',  farg))
-            flex.append((f'{work}_{t}_{r}_{c}', 'timing', targ))
+    for r in rarr:
+        for c in carr:
+            if args.q >= 2:
+                flex.append((f'{work}_{t}_{r}_{c}', 'trace',  farg))
+                fdep.append({})
 
-            fdep.append({})
-            fdep.append({len(fdep) - 1})
+            if args.q >= 3:
+                flex.append((f'{work}_{t}_{r}_{c}', 'timing', targ))
+                fdep.append({len(fdep) - 1})
 
     tag = f'{misc.kmgt(args.s)}-{misc.kmgt(args.w)}_{misc.kmgt(args.i)}_{misc.kmgt(args.j)}'
 

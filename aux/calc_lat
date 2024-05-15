@@ -72,11 +72,11 @@ def parse(dic, fn):
 
                         if (diff := time - prev) > 0:
                             offs = diff
-                            print(f'  {time} set {offs}')
+                            print(f'  {time} set {offs}', file = sys.stderr)
                     else:
-                        if (diff := time - prev) < offs:
+                        if offs and (diff := time - prev) < offs:
                             offs = max(0, diff)
-                            print(f'  {time} dec {offs}')
+                            print(f'  {time} dec {offs}', file = sys.stderr)
 
                         real[core].append(time - init - offs)
 
