@@ -111,7 +111,12 @@ def para(info, core, func, args, deps):
                 i, arg = curr.pop()
 
                 if not (pid := os.fork()):
-                    print(f'  starting {func.__name__}({", ".join(arg)})')
+                    while True:
+                        try:
+                            print(f'  starting {func.__name__}({", ".join(arg)})')
+                            break
+                        except BlockingIOError:
+                            pass
 
                     func(*arg)
                     os._exit(0)
