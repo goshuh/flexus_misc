@@ -11,10 +11,10 @@ REQPS = [
     20000,
     40000,
     60000,
-#   80000,
-#   120000,
-#   160000,
-#   200000
+    80000,
+    120000,
+    160000,
+    200000
 ]
 
 CHAIN = [
@@ -43,7 +43,7 @@ def parse_args():
 
 def run(t, work):
     args = parse_args()
-    core = os.cpu_count()
+    core = os.cpu_count() - 1
 
     #
     snap = []

@@ -27,7 +27,11 @@ static std::vector<std::string> split(
   return sp;
 }
 
-static int load_l1d(const std::string &file, uint64_t base, uint64_t bound, uint64_t shf) {
+static int load_l1d(
+    const std::string &file,
+    uint64_t base,
+    uint64_t bound,
+    uint64_t shift) {
   std::ifstream ifs(file);
 
   if (!ifs.good())
@@ -61,12 +65,10 @@ static int load_l1d(const std::string &file, uint64_t base, uint64_t bound, uint
           st = std::stoi(s);
           break;
         case 3:
-          if (st) {
-            auto addr = std::stoul(s, nullptr, 16) << shf;
+          auto addr = std::stoul(s, nullptr, 16) << shift;
 
-            if ((addr >= base) && (addr < bound))
-              ret++;
-          }
+          if (st && (addr >= base) && (addr < bound))
+            ret++;
           break;
       }
     }
@@ -88,7 +90,10 @@ struct Block {
   }
 };
 
-static int load_llc(const std::string &file, uint64_t base, uint64_t bound) {
+static int load_llc(
+    const std::string &file,
+    uint64_t base,
+    uint64_t bound) {
   std::ifstream ifs(file);
 
   if (!ifs.good())
@@ -123,8 +128,8 @@ int main(int argc, char **argv) {
   uint64_t bound = 0;
   uint64_t shift = 0;
 
-  if (argc > 1) {
-    auto sp = split(argv[1], '-');
+  if (argc > 2) {
+    auto sp = split(argv[2], '-');
 
     if (sp.size() > 0)
       base  = std::stoul(sp[0], nullptr, 16);
@@ -141,8 +146,8 @@ int main(int argc, char **argv) {
   std::string l1d(argv[1]);
   std::string llc(argv[1]);
 
-  l1d.append("sys-L1d");
-  llc.append("sys-L2-cache.gz");
+  l1d.append("/sys-L1d");
+  llc.append("/sys-L2-cache.gz");
 
   printf("l1d: %d\n", load_l1d(l1d, base, bound, shift));
   printf("llc: %d\n", load_llc(llc, base, bound));
