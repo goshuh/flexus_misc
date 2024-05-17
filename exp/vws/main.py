@@ -12,15 +12,17 @@ REQPS = [
     40000,
     60000,
     80000,
+    100000,
     120000,
-    160000,
-    200000
+    140000,
+    160000
 ]
 
 CHAIN = [
-#   256,
     64,
+    32,
     16,
+    8,
     4,
     1
 ]
@@ -44,7 +46,7 @@ def parse_args():
 
 def main(t, work):
     args = parse_args()
-    core = os.cpu_count() - 1
+    core = os.cpu_count()
     step = misc.step(args.a)
 
     if step(0):

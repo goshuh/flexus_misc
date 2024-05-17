@@ -4,38 +4,34 @@ set -e
 
 cd ${0:A:h:h}
 
-exp=vws
-dir=1-8k_32k_2m
-bin=media
-tds=0
-mod=timing
+conf=1-8k_32k_2m
+work=media
+type=0
+mode=timing
 
 while (( ${#} )); do
     case ${1} in
-        -e=*)
-            exp=${1##*=}
+        -c=*)
+            conf=${1##*=}
             ;;
-        -d=*)
-            dir=${1##*=}
-            ;;
-        -b=*)
-            bin=${1##*=}
+        -w=*)
+            work=${1##*=}
             ;;
         -t=*)
-            tds=${1##*=}
+            type=${1##*=}
             ;;
         -m=*)
-            mod=${1##*=}
+            mode=${1##*=}
             ;;
     esac
 
     shift
 done
 
-mkdir -p tmp
+mkdir -p res
 
-aux/calc_lat "exp/${exp}/work/results/${dir}/${bin}_${tds}_\\d+_\\d+/${mod}.bin$"       \
-    > tmp/${tds}.${dir}.lat.csv
+aux/calc_lat "${conf}/${work}_${type}_\\d+_\\d+/${mode}.bin"        \
+    > res/${work}.${type}.${conf}.lat.csv
 
-aux/calc_pmc "exp/${exp}/work/results/${dir}/${bin}_${tds}_\\d+_\\d+/${mod}.gz$" ${mod} \
-    > tmp/${tds}.${dir}.pmc.csv
+aux/calc_pmc "${conf}/${work}_${type}_\\d+_\\d+/${mode}.gz" ${mode} \
+    > res/${work}.${type}.${conf}.pmc.csv

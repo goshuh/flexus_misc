@@ -43,7 +43,7 @@ def parse(dir, dic, fn):
 
 
 def traverse(dir):
-    sub = list(map(re.compile, dir.split(os.sep)))
+    sub = list(map(re.compile, map(lambda x: f'{x}$', dir.split(os.sep))))
 
     def iterate(top, dep):
         end = dep == len(sub) - 1
