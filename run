@@ -44,7 +44,7 @@ if __name__ == '__main__':
     args = parse_args()
 
     if os.uname().nodename.startswith('iccluster'):
-        prep(os.path.join('', 'mnt', 'sdb', os.environ['USERNAME'], 'out'), args.x)
+        prep(os.path.join('/', 'mnt', 'sdb', os.environ['USER'], 'out'), args.x)
     else:
         prep(os.path.join('out'), args.x)
 
