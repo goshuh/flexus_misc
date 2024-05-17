@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 
 import os
+import sys
 
 import argparse
-import importlib
 
 
 def parse_args():
@@ -12,16 +12,17 @@ def parse_args():
     args.add_argument('-t', default = '0')
     args.add_argument('-e', default = 'media')
     args.add_argument('-x', default = 'vws')
-    args.add_argument('-d', action  = 'store_true')
 
     return args.parse_known_args()[0]
 
 
-def prepare(work):
+def prep(work, exp):
     def link(src, dst):
         for f in os.listdir(src):
             if not os.path.islink(d := os.path.join(dst, f)):
                 os.symlink(os.path.abspath(os.path.join(src, f)), d)
+
+    exp = os.path.join('exp', exp)
 
     os.makedirs(work, exist_ok = True)
 
@@ -29,15 +30,23 @@ def prepare(work):
     link('cfg', work)
     link('dat', work)
     link('lib', work)
+    link( exp,  work)
 
     os.chdir(work)
 
+    # enable importing from .
+    sys.path.insert(0, '')
+
 
 if __name__ == '__main__':
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
     args = parse_args()
 
-    prepare(os.path.join('exp', args.x, 'work'))
+    if os.uname().nodename.startswith('iccluster'):
+        prep(os.path.join('', 'mnt', 'sdb', os.environ['USERNAME'], 'out'), args.x)
+    else:
+        prep(os.path.join('out'), args.x)
 
-    if not args.d:
-        xmod = importlib.import_module(f'exp.{args.x}.run')
-        xmod.run(args.t, args.e)
+    import main
+    main.main(args.t, args.e)

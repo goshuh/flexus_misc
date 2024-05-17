@@ -85,8 +85,8 @@ def trans(mod, dic):
                         'sys-L2-WriteMissInvalidatesOnly',
                         'sys-L2-WriteMissMemory') + l2d_hit
 
-        vlb_hit = total('sys-mmu-dtlb-hit')
-        vlb_acc = total('sys-mmu-dtlb-access')
+        vlb_hit = total('sys-mmu-dtlb-vlbHit')
+        vlb_acc = total('sys-mmu-dtlb-vlbAccess')
 
         ret['mem-l1'    ] = total('sys-uarch-memAtL1')
         ret['mem-l1-lat'] = total('sys-uarch-memAtL1Lat')
@@ -134,8 +134,8 @@ def trans(mod, dic):
                         'sys-L2-Misses:Offchip:Read',
                         'sys-L2-Misses:Offchip:Write') + l2d_hit
 
-        vlb_hit = total('sys-mmu-dtlb-hit')
-        vlb_acc = total('sys-mmu-dtlb-access')
+        vlb_hit = total('sys-mmu-dtlb-vlbHit')
+        vlb_acc = total('sys-mmu-dtlb-vlbAccess')
 
     ret['l1i-miss'] = 1.0 - l1i_hit / l1i_acc
     ret['l1d-miss'] = 1.0 - l1d_hit / l1d_acc

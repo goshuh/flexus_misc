@@ -7,7 +7,7 @@ import time
 import shutil
 import signal
 
-from . import runq
+import runq
 
 
 def pow2(src):
@@ -39,6 +39,31 @@ def kmgt(src):
         pow = pow +  1
 
     return f'{src}{fix[pow]}'
+
+
+def step(src):
+    class comp(object):
+        def __init__(self, pre, suf):
+            self.pre = int(pre)
+            self.suf = int(suf)
+
+        def __call__(self, *arr):
+            for a in arr:
+                if self.pre <= a <= self.suf:
+                    return True
+            return False
+
+    src = src.split(':')
+
+    pre = src[0] if len(src) > 0 else '-'
+    suf = src[1] if len(src) > 1 else pre
+
+    if pre == '-':
+        pre = '0'
+    if suf == '-':
+        suf = '100'
+
+    return comp(pre, suf)
 
 
 def prep(src):
@@ -79,6 +104,19 @@ def para(info, core, func, args, deps):
     curr = []
     rmap = [[] for _ in range(len(args))]
 
+    def wipe(sig, frame):
+        for pid in pids:
+            try:
+                os.kill(pid, signal.SIGKILL)
+                os.waitpid(pid, 0)
+            except:
+                pass
+
+        os._exit(1)
+
+    signal.signal(signal.SIGINT,  wipe)
+    signal.signal(signal.SIGTERM, wipe)
+
     def wait():
         i = pids.pop(os.waitpid(-1, 0)[0])
 
@@ -88,48 +126,42 @@ def para(info, core, func, args, deps):
             if not deps[r]:
                 curr.append((r, args[r]))
 
-    try:
-        for i, dep in enumerate(deps):
-            if isinstance(dep, (int, list)):
-                dep = deps[i] = set(i)
+    for i, dep in enumerate(deps):
+        if isinstance(dep, (int, list)):
+            dep = deps[i] = set(i)
 
-            for d in dep:
-                rmap[d].append(i)
+        for d in dep:
+            rmap[d].append(i)
 
-        for i, (arg, dep) in enumerate(zip(args, deps)):
-            if not dep:
-                curr.append((i, arg))
+    for i, (arg, dep) in enumerate(zip(args, deps)):
+        if not dep:
+            curr.append((i, arg))
 
+    while curr:
         while curr:
-            while curr:
-                if len(pids) == core:
-                    wait()
-
-                i, arg = curr.pop()
-
-                if not (pid := os.fork()):
-                    while True:
-                        try:
-                            print(f'  starting {func.__name__}({", ".join(arg)})')
-                            break
-                        except BlockingIOError:
-                            pass
-
-                    func(*arg)
-                    os._exit(0)
-
-                pids[pid] = i
-
-            while pids:
+            if len(pids) == core:
                 wait()
 
-                if curr:
-                    break
+            i, arg = curr.pop()
 
-    except KeyboardInterrupt:
-        for pid in pids:
-            os.kill(pid, signal.SIGKILL)
-            os.waitpid(pid, 0)
+            if not (pid := os.fork()):
+                while True:
+                    try:
+                        print(f'  {func.__name__}({", ".join(arg)})')
+                        break
+                    except BlockingIOError:
+                        pass
+
+                func(*arg)
+                os._exit(0)
+
+            pids[pid] = i
+
+        while pids:
+            wait()
+
+            if curr:
+                break
 
 
 def snap(snap, rarg = '', warg = ''):
