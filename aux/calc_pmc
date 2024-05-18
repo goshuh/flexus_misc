@@ -67,6 +67,9 @@ def trans(mod, dic):
         return sum(map(lambda x: int(dic[x]), arr))
 
     if mod == 'timing':
+        cycle   = total('sys-cycles')
+        commit  = total('sys-uarch-Commits')
+
         l1i_hit = total('sys-ufetch-Hits')
         l1i_acc = total('sys-ufetch-FetchAccess')
 
@@ -87,6 +90,8 @@ def trans(mod, dic):
 
         vlb_hit = total('sys-mmu-dtlb-vlbHit')
         vlb_acc = total('sys-mmu-dtlb-vlbAccess')
+
+        ret['ipc'       ] = commit / cycle
 
         ret['mem-l1'    ] = total('sys-uarch-memAtL1')
         ret['mem-l1-lat'] = total('sys-uarch-memAtL1Lat')
