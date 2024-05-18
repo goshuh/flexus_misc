@@ -207,8 +207,9 @@ def flex(pref, snap, mode, cfgs):
 
     if mode == 'timing':
         snap = os.path.join(snap, 'adv')
+        olds = os.path.join(snap, 'vmstate')
 
-        if not os.path.isfile(snap, 'vmstate'):
+        if not os.path.isfile(olds):
             sys.exit(f'ERROR: {snap} does not exist')
 
     else:
