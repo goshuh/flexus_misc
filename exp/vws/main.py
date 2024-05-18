@@ -3,6 +3,8 @@
 import os
 
 import argparse
+import random
+import shutil
 
 import misc
 
@@ -69,6 +71,9 @@ def main(t, work):
     fdep = []
     sets = args.j // (64 * 16)
 
+    conf = f'{misc.kmgt(args.s)}-{misc.kmgt(args.w)}_{misc.kmgt(args.i)}_{misc.kmgt(args.j)}'
+    pref = f'{random.random()}'
+
     if step(1):
         farg  = ' '.join(map(str, [
             '-mmu:dvlbsets',        args.s,
@@ -83,7 +88,7 @@ def main(t, work):
             for c in carr:
                 path = f'{work}_{t}_{r}_{c}'
 
-                flex.append((path, 'trace',  farg))
+                flex.append((pref, path, 'trace',  farg))
                 fdep.append({})
 
     if step(2):
@@ -102,19 +107,19 @@ def main(t, work):
             for c in carr:
                 path = f'{work}_{t}_{r}_{c}'
 
-                flex.append((path, 'timing', targ))
+                flex.append((pref, path, 'timing', targ))
                 fdep.append({len(fdep) - flen} if flex else {})
-
-    conf = f'{misc.kmgt(args.s)}-{misc.kmgt(args.w)}_{misc.kmgt(args.i)}_{misc.kmgt(args.j)}'
 
     if step(2, 3):
         misc.para(conf, core, misc.flex, flex, fdep)
 
-    if step(3):
         dest = misc.prep(os.path.join('res', conf))
 
         for r in REQPS:
             for c in CHAIN:
                 path = f'{work}_{t}_{r}_{c}'
 
-                misc.copy(path, os.path.join(dest, path))
+                misc.copy(os.path.join(pref, path),
+                          os.path.join(dest, path))
+
+        shutil.rmtree(pref)

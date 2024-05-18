@@ -168,7 +168,7 @@ def snap(snap, rarg = '', warg = ''):
     if os.path.isfile(os.path.join(snap, 'vmstate')):
         return
 
-    os.makedirs(snap, exist_ok = True)
+    prep(snap)
 
     with open(os.path.join(snap, 'snap.cfg'), 'w') as fd:
         if rarg:
@@ -201,14 +201,27 @@ def snap(snap, rarg = '', warg = ''):
     expt.sendline('q')
 
 
-def flex(snap, mode, cfgs):
+def flex(pref, snap, mode, cfgs):
+    orig = snap
+    snap = os.path.join(pref, snap)
+
     if mode == 'timing':
         snap = os.path.join(snap, 'adv')
-    elif os.path.isfile(os.path.join(snap, 'adv', 'vmstate')):
-        return
 
-    if not os.path.isdir(snap):
-        sys.exit(f'ERROR: {snap} does not exist')
+        if not os.path.isfile(snap, 'vmstate'):
+            sys.exit(f'ERROR: {snap} does not exist')
+
+    else:
+        olds = os.path.join(orig, 'vmstate')
+        news = os.path.join(snap, 'vmstate')
+
+        if not os.path.isfile(olds):
+            sys.exit(f'ERROR: {olds} does not exist')
+
+        prep(snap)
+
+        if not os.path.islink(news):
+            os.symlink(os.path.abspath(olds), news)
 
     os.environ['FLEXUS_LOG_OVERRIDE'] = f'{mode}.log'
     os.environ['FLEXUS_CFG_OVERRIDE'] = cfgs
