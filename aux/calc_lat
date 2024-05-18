@@ -29,10 +29,8 @@ def parse(dic, fn):
     info = '@QQ'
     size = struct.calcsize(info)
 
-    flag = 1
+    flag = False
     init = 0
-    prev = 0
-    offs = 0
 
     print(fn, file = sys.stderr)
 
@@ -53,47 +51,27 @@ def parse(dic, fn):
 
             match key:
                 case 6:
-                    if flag:
-                        flag |= 0x02
-
                     init = val
 
                 case 7:
                     if flag:
-                        flag |= 0x04
-                    else:
-                        fake[core].append(val - init)
-
-                    prev = val
+                        fake[core].append(val  - init)
 
                 case 8:
                     if flag:
-                        flag |= 0x08
-
-                        if (diff := time - prev) > 0:
-                            offs = diff
-                            print(f'  {time} set {offs}', file = sys.stderr)
-                    else:
-                        if offs and (diff := time - prev) < offs:
-                            offs = max(0, diff)
-                            print(f'  {time} dec {offs}', file = sys.stderr)
-
-                        real[core].append(time - init - offs)
+                        real[core].append(time - init)
 
                 case 9:
                     if flag:
-                        flag |= 0x10
-                    else:
                         user[core].append(val)
 
                 case 10:
                     if flag:
-                        flag |= 0x20
-                    else:
                         iret[core].append(val)
 
-            if flag == 0x3f:
-                flag = 0
+                case 15:
+                    flag = True
+
 
     def output(c, cds, name, arr):
         if not arr:

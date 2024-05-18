@@ -36,8 +36,8 @@ def parse_args():
     args.add_argument('-i', type = misc.pow2, default = 32768)
     args.add_argument('-j', type = misc.pow2, default = 2097152)
 
-    args.add_argument('-r', type = int, required = False)
-    args.add_argument('-c', type = int, required = False)
+    args.add_argument('-r', type = int, action = 'append', required = False)
+    args.add_argument('-c', type = int, action = 'append', required = False)
 
     args.add_argument('-a', default = '-')
 
@@ -49,12 +49,12 @@ def main(t, work):
     core = os.cpu_count()
     step = misc.step(args.a)
 
+    rarr = args.r if args.r else REQPS
+    carr = args.c if args.c else CHAIN
+
     if step(0):
         snap = []
         sdep = []
-
-        rarr = [args.r] if args.r else REQPS
-        carr = [args.c] if args.c else CHAIN
 
         for r in rarr:
             for c in carr:

@@ -31,7 +31,7 @@ done
 mkdir -p res
 
 aux/calc_lat "${conf}/${work}_${type}_\\d+_\\d+/${mode}.bin"        \
-    > res/${work}.${type}.${conf}.lat.csv
+    > res/${work}.${type}.${conf:t}.lat.csv
 
 aux/calc_pmc "${conf}/${work}_${type}_\\d+_\\d+/${mode}.gz" ${mode} \
-    > res/${work}.${type}.${conf}.pmc.csv
+    > res/${work}.${type}.${conf:t}.pmc.csv
