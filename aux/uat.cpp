@@ -5,6 +5,14 @@
 #include <vector>
 
 #include <boost/archive/binary_iarchive.hpp>
+#include <boost/iostreams/categories.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+
+#define PL_BASE  0x800000000lu
+#define PL_BOUND 0x803fffffflu
+#define BT_BASE  0x808000000lu
+#define BT_BOUND 0x80bfffffflu
 
 static std::vector<std::string> split(
     const std::string &str,
@@ -27,17 +35,14 @@ static std::vector<std::string> split(
   return sp;
 }
 
-static int load_l1d(
-    const std::string &file,
-    uint64_t base,
-    uint64_t bound,
-    uint64_t shift) {
+static void load_l1d(const std::string &file) {
   std::ifstream ifs(file);
 
   if (!ifs.good())
-    return -1;
+    return;
 
-  int ret = 0;
+  int pl = 0;
+  int bt = 0;
 
   std::string str;
 
@@ -65,41 +70,34 @@ static int load_l1d(
           st = std::stoi(s);
           break;
         case 3:
-          auto addr = std::stoul(s, nullptr, 16) << shift;
+          auto addr = std::stoul(s, nullptr, 16) << 8;
 
-          if (st && (addr >= base) && (addr < bound))
-            ret++;
+          if (st) {
+            if ((addr >= PL_BASE) & (addr < PL_BOUND))
+              pl++;
+            if ((addr >= BT_BASE) & (addr < BT_BOUND))
+              bt++;
+          }
           break;
       }
     }
   }
 
-  return ret;
+  printf("l1d: %d %d\n", pl, bt);
 }
 
-struct Block {
-  uint64_t tag;
-  uint8_t state;
-
-  friend class boost::serialization::access;
-
-  template <class Archive>
-  void serialize(Archive &ar, const uint32_t version) {
-    ar &tag;
-    ar &state;
-  }
-};
-
-static int load_llc(
-    const std::string &file,
-    uint64_t base,
-    uint64_t bound) {
-  std::ifstream ifs(file);
+static void load_llc(const std::string &file) {
+  std::ifstream ifs(file, std::ios::binary);
 
   if (!ifs.good())
-    return -1;
+    return;
 
-  boost::archive::binary_iarchive ia(ifs);
+  boost::iostreams::filtering_stream<boost::iostreams::input> in;
+
+  in.push(boost::iostreams::gzip_decompressor());
+  in.push(ifs);
+
+  boost::archive::binary_iarchive ia(in);
 
   uint64_t sets;
   uint64_t ways;
@@ -107,50 +105,43 @@ static int load_llc(
   ia >> sets;
   ia >> ways;
 
-  int ret = 0;
+  int pl = 0;
+  int bt = 0;
+
+  // i have no idea wtf is this
+  uint8_t pad;
+
+  ia >> pad;
 
   for (auto i = 0u; i < sets; i++) {
     for (auto j = 0u; j < ways; j++) {
-      Block bs;
+      uint64_t tag;
+      uint8_t state;
 
-      ia >> bs;
+      ia >> tag;
+      ia >> state;
 
-      if ((bs.state != 'I') && (bs.tag >= base) && (bs.tag < bound))
-        ret++;
+      if (state != 'I') {
+        if ((tag >= PL_BASE) & (tag < PL_BOUND))
+          pl++;
+        if ((tag >= BT_BASE) & (tag < BT_BOUND))
+          bt++;
+      }
     }
   }
 
-  return ret;
+  printf("llc: %d %d\n", pl, bt);
 }
 
 int main(int argc, char **argv) {
-  uint64_t base  = 0;
-  uint64_t bound = 0;
-  uint64_t shift = 0;
-
-  if (argc > 2) {
-    auto sp = split(argv[2], '-');
-
-    if (sp.size() > 0)
-      base  = std::stoul(sp[0], nullptr, 16);
-    if (sp.size() > 1)
-      bound = std::stoul(sp[1], nullptr, 16);
-    if (sp.size() > 2)
-      shift = std::stoul(sp[2], nullptr, 10);
-  }
-
-  base  = base  ?: 0x800000000lu;
-  bound = bound ?: 0x803fffffflu;
-  shift = shift ?: 12;
-
   std::string l1d(argv[1]);
   std::string llc(argv[1]);
 
   l1d.append("/sys-L1d");
   llc.append("/sys-L2-cache.gz");
 
-  printf("l1d: %d\n", load_l1d(l1d, base, bound, shift));
-  printf("llc: %d\n", load_llc(llc, base, bound));
+  load_l1d(l1d);
+  load_llc(llc);
 
   return 0;
 }

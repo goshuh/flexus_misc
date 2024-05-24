@@ -100,12 +100,18 @@ def trans(mod, dic):
         ret['mem-mc'    ] = total('sys-uarch-memAtMC')
         ret['mem-mc-lat'] = total('sys-uarch-memAtMCLat')
 
+        ret['mem-lat'   ] = ((ret['mem-l1-lat'] + ret['mem-l2-lat'] + ret['mem-mc-lat']) /
+                             (ret['mem-l1'    ] + ret['mem-l2'    ] + ret['mem-mc']))
+
         ret['uat-l1'    ] = total('sys-uarch-uatAtL1')
         ret['uat-l1-lat'] = total('sys-uarch-uatAtL1Lat')
         ret['uat-l2'    ] = total('sys-uarch-uatAtL2')
         ret['uat-l2-lat'] = total('sys-uarch-uatAtL2Lat')
         ret['uat-mc'    ] = total('sys-uarch-uatAtMC')
         ret['uat-mc-lat'] = total('sys-uarch-uatAtMCLat')
+
+        ret['uat-lat'   ] = ((ret['uat-l1-lat'] + ret['uat-l2-lat'] + ret['uat-mc-lat']) /
+                             (ret['uat-l1'    ] + ret['uat-l2'    ] + ret['uat-mc']))
 
     else:
         l1i_hit = total('sys-L1i-Hits:Fetch:Exclusive',

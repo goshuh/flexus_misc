@@ -1,0 +1,75 @@
+#!/usr/bin/python
+
+import sys
+
+
+class Info(object):
+
+    def __init__(self):
+        self.size    = 0
+        self.assoc   = 0
+        self.latency = 0
+        self.energy  = 0
+        self.power   = 0
+        self.area    = 0
+
+    def __repr__(self):
+        # 4 ghz, ipc = 1, ls ratio = 25%
+        self.power  += self.energy * 500
+
+        return f'{self.size},{self.assoc},{self.latency},{self.power},{self.area}'
+
+    def set_size   (self, x):
+        self.size    = int(x)
+
+    def set_assoc  (self, x):
+        self.assoc   = int(x)
+
+    def set_latency(self, x):
+        self.latency = float(x)
+
+    def add_energy (self, x):
+        self.energy += float(x)
+
+    def add_power  (self, x):
+        self.power  += float(x)
+
+    def add_area   (self, x):
+        self.area   += float(x)
+
+
+params = {
+    # all
+    'Cache size                    : ':                            lambda i, x: i.set_size   (x),
+    'Associativity                 : ':                            lambda i, x: i.set_assoc  (x),
+
+    '    Access time (ns): ':                                      lambda i, x: i.set_latency(x),
+    '    Total dynamic read energy per access (nJ): ':             lambda i, x: i.add_energy (x),
+    '    Total dynamic write energy per access (nJ): ':            lambda i, x: i.add_energy (x),
+    '    Total leakage power of a bank (mW): ':                    lambda i, x: i.add_power  (x),
+    '    Total gate leakage power of a bank (mW): ':               lambda i, x: i.add_power  (x),
+
+    # fs
+    '  Total dynamic associative search energy per access (nJ): ': lambda i, x: i.add_energy (x),
+    '  Fully associative cache array: Area (mm2): ':               lambda i, x: i.add_area   (x),
+
+    # ss
+    '  Data array: Area (mm2): ':                                  lambda i, x: i.add_area   (x),
+    '  Tag array: Area (mm2): ':                                   lambda i, x: i.add_area   (x)
+}
+
+
+if __name__ == '__main__':
+    info = Info()
+
+    while True:
+        try:
+            cs = input()
+
+            for p, f in params.items():
+                if cs.startswith(p):
+                    f(info, cs[len(p):])
+        except:
+            break
+
+    print(info)
