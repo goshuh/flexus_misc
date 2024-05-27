@@ -93,6 +93,9 @@ def trans(mod, dic):
 
         ret['ipc'       ] = commit / cycle
 
+        ret['l1d-mpki'  ] = (l1d_acc - l1d_hit) / commit * 1000
+        ret['l1i-mpki'  ] = (l1i_acc - l1i_hit) / commit * 1000
+
         ret['mem-l1'    ] = total('sys-uarch-memAtL1')
         ret['mem-l1-lat'] = total('sys-uarch-memAtL1Lat')
         ret['mem-l2'    ] = total('sys-uarch-memAtL2')

@@ -14,10 +14,7 @@ class Info(object):
         self.area    = 0
 
     def __repr__(self):
-        # 4 ghz, ipc = 1, ls ratio = 25%
-        self.power  += self.energy * 500
-
-        return f'{self.size},{self.assoc},{self.latency},{self.power},{self.area}'
+        return f'{self.size // 18},{self.assoc},{self.latency},{self.energy},{self.power},{self.area}'
 
     def set_size   (self, x):
         self.size    = int(x)

@@ -1,0 +1,35 @@
+#!/usr/bin/python
+
+import os
+import sys
+
+import libdraw as ld
+
+
+def draw(fn, ext = ''):
+    if not os.path.isfile(fn):
+        sys.exit(f'ERROR: {fn} not found')
+
+    with ld.Draw(fn + '.pdf') as (f, a):
+        match ext:
+            case 'q4':
+                cs = ['Latency']
+                rs = ['1', '2', '4', '8', '16', '32']
+
+        d = ld.Data(cols = cs,
+                    rows = rs,
+                    file = fn).unwrap()
+
+        match ext:
+            case 'q4':
+                a.bar(d, width = 0.4)
+
+        a.format(xlabel = 'Sharers',
+                 ylabel = 'Latency (ns)',
+                 ymin   =  0,
+                 ymax   =  200)
+
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        draw(*sys.argv[1:])
