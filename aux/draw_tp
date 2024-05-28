@@ -32,7 +32,7 @@ def draw(fn, ext = ''):
 
         match ext:
             case 'q1':
-                ym = 400
+                ym = 500
                 nc = 2
             case '':
                 ym = 180

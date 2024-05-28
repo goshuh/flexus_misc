@@ -35,6 +35,8 @@ def parse_args():
 
     args.add_argument('-s', type = misc.pow2, default = 1)
     args.add_argument('-w', type = misc.pow2, default = 8192)
+    args.add_argument('-S', type = misc.pow2, default = 1)
+    args.add_argument('-W', type = misc.pow2, default = 8192)
     args.add_argument('-i', type = misc.pow2, default = 32768)
     args.add_argument('-j', type = misc.pow2, default = 2097152)
 
@@ -78,6 +80,8 @@ def main(t, work):
         farg  = ' '.join(map(str, [
             '-mmu:dvlbsets',        args.s,
             '-mmu:dvlbways',        args.w,
+            '-mmu:ivlbsets',        args.S,
+            '-mmu:ivlbways',        args.W,
             '-mmu:vlbtest',        'true',
             '-L1d:size',            args.i,
             '-L2:size',             args.j,
@@ -97,6 +101,8 @@ def main(t, work):
         targ = ' '.join(map(str, [
             '-mmu:dvlbsets',        args.s,
             '-mmu:dvlbways',        args.w,
+            '-mmu:ivlbsets',        args.S,
+            '-mmu:ivlbways',        args.W,
             '-mmu:vlbtest',        'true',
             '-L1d:array_config',  f'STD:size={args.i}:assoc=8:repl=lru',
             '-L2:array_config',   f'STD:total_sets={sets}:assoc=16:repl=lru',
@@ -115,8 +121,8 @@ def main(t, work):
 
         dest = misc.prep(os.path.join('res', conf))
 
-        for r in REQPS:
-            for c in CHAIN:
+        for r in rarr:
+            for c in carr:
                 path = f'{work}_{t}_{r}_{c}'
 
                 misc.copy(os.path.join(pref, path),
