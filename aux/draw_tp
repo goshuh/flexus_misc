@@ -11,33 +11,44 @@ def draw(fn, ext = ''):
         sys.exit(f'ERROR: {fn} not found')
 
     with ld.Draw(fn + '.pdf') as (f, a):
-        cs = ['Load', '1', '4', '8', '16', '32', '64']
-
-        if ext:
-            cs.append('PL')
+        match ext:
+            case 'q1':
+                cs = ['Load', 'Plain list', 'B-tree']
+            case '':
+                cs = ['Load', '1', '4', '8', '16', '32', '64']
+            case 'all':
+                cs = ['Load', '1', '4', '8', '16', '32', '64', '64 Plain list']
 
         d = ld.Data(cols = cs,
                     file = fn).unwrap()
 
-        a.plot(d['Load'], d['1' ], label = '1x')
-        a.plot(d['Load'], d['4' ], label = '4x')
-        a.plot(d['Load'], d['8' ], label = '8x')
+        match ext:
+            case 'q1':
+                for n in cs[1:]:
+                    a.plot(d['Load'], d[n], label = n)
+            case _:
+                for n in cs[1:]:
+                    a.plot(d['Load'], d[n], label = f'{n[:2]}x{n[2:]}')
 
-        if ext:
-            a.plot(d['Load'], d['PL'], label = '64x Plain List')
-
-        a.plot(d['Load'], d['16'], label = '16x')
-        a.plot(d['Load'], d['32'], label = '32x')
-        a.plot(d['Load'], d['64'], label = '64x')
+        match ext:
+            case 'q1':
+                ym = 400
+                nc = 2
+            case '':
+                ym = 180
+                nc = 3
+            case 'all':
+                ym = 180
+                nc = 4
 
         a.format(xlabel = 'Load (KRPS)',
                  ylabel = 'Throughput (KRPS)',
                  ymin   =  0,
-                 ymax   =  180,
+                 ymax   =  ym,
                  xmin   =  0,
-                 xmax   =  180)
+                 xmax   =  ym)
 
-        a.legend(loc = 't', ncols = 4 if ext else 3)
+        a.legend(loc = 't', ncols = nc)
 
 
 if __name__ == '__main__':
