@@ -165,7 +165,7 @@ def para(info, core, func, args, deps):
 
 
 def snap(snap, rarg = '', warg = ''):
-    if os.path.isfile(os.path.join(snap, 'vmstate')):
+    if os.path.isfile(os.path.join(snap, 'snap.cfg')):
         return
 
     prep(snap)
