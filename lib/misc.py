@@ -97,7 +97,12 @@ def copy(src, dst):
 
 
 def para(info, core, func, args, deps):
-    print(info)
+    while True:
+        try:
+            print(info)
+            break
+        except BlockingIOError:
+            pass
 
     # the multiprocessing.Pool sucks
     pids = {}

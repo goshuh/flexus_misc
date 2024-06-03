@@ -39,6 +39,8 @@ def parse_args():
     args.add_argument('-W', type = misc.pow2, default = 8192)
     args.add_argument('-i', type = misc.pow2, default = 32768)
     args.add_argument('-j', type = misc.pow2, default = 2097152)
+    args.add_argument('-m', type = misc.pow2, default = 1024)
+    args.add_argument('-n', type = misc.pow2, default = 16)
 
     args.add_argument('-r', type = int, action = 'append', required = False)
     args.add_argument('-c', type = int, action = 'append', required = False)
@@ -73,7 +75,10 @@ def main(t, work):
     fdep = []
     sets = args.j // (64 * 16)
 
-    conf = f'{misc.kmgt(args.s)}-{misc.kmgt(args.w)}_{misc.kmgt(args.i)}_{misc.kmgt(args.j)}'
+    conf = f'{misc.kmgt(args.s)}-{misc.kmgt(args.w)}_' + \
+           f'{misc.kmgt(args.S)}-{misc.kmgt(args.W)}_' + \
+           f'{misc.kmgt(args.i)}_{misc.kmgt(args.j)}_' + \
+           f'{misc.kmgt(args.m)}-{misc.kmgt(args.n)}'
     pref = f'{random.random()}'
 
     if step(1):
@@ -86,6 +91,8 @@ def main(t, work):
             '-L1d:size',            args.i,
             '-L2:size',             args.j,
             '-L2:directory_type', f'Standard:sets={sets}:assoc=16:repl=lru',
+            '-L2:uat_sets',         args.m,
+            '-L2:uat_ways',         args.n
         ]))
 
         for r in rarr:
@@ -106,7 +113,9 @@ def main(t, work):
             '-mmu:vlbtest',        'true',
             '-L1d:array_config',  f'STD:size={args.i}:assoc=8:repl=lru',
             '-L2:array_config',   f'STD:total_sets={sets}:assoc=16:repl=lru',
-            '-L2:dir_config',     f'sets={sets}:assoc=16'
+            '-L2:dir_config',     f'sets={sets}:assoc=16',
+            '-L2:uat_sets',         args.m,
+            '-L2:uat_ways',         args.n
         ]))
 
         for r in rarr:
