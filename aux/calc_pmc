@@ -12,12 +12,12 @@ def parse(dir, dic, fn):
 
     l = 0
 
-    for dn in fn.split('/'):
+    for dn in reversed(fn.split('/')):
         sp = dn.split('_')
 
-        if len(sp) == 4:
-            l = int(sp[2])
-            n = int(sp[3])
+        if len(sp) >= 4:
+            l = int(sp[-2])
+            n = int(sp[-1])
             break
 
     if not l:
@@ -156,6 +156,13 @@ def trans(mod, dic):
     ret['l2i-miss'] = 1.0 - l2i_hit / l2i_acc
     ret['l2d-miss'] = 1.0 - l2d_hit / l2d_acc
     ret['vlb-miss'] = 1.0 - vlb_hit / vlb_acc
+
+    ret['uat-acc' ] = total('sys-L2-uatAccess')
+    ret['uat-ev'  ] = total('sys-L2-uatEvict')
+    ret['uat-hits'] = total('sys-L2-uatHitSelf')
+    ret['uat-hitm'] = total('sys-L2-uatHitMain')
+    ret['uat-hitb'] = total('sys-L2-uatHitBoth')
+    ret['uat-inv' ] = total('sys-L2-uatInv')
 
     return ret
 

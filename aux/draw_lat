@@ -7,53 +7,49 @@ import libdraw as ld
 
 
 def draw(fn, ext = ''):
+    if not ext:
+        sys.exit(f'ERROR: ext not specified')
+
     if not os.path.isfile(fn):
         sys.exit(f'ERROR: {fn} not found')
 
     with ld.Draw(fn + '.pdf') as (f, a):
         match ext:
             case 'q1':
-                cs = ['Load', 'Plain list', 'B-tree']
+                cs = ['Load', 'B-tree', 'Plain list']
             case 'q2':
-                cs = ['Load', '32', '64', '128', '256', '512', '1K']
-            case '':
-                cs = ['Load', '1', '4', '8', '16', '32', '64']
-            case 'all':
-                cs = ['Load', '1', '4', '8', '16', '32', '64', '64 Plain list']
+                cs = ['Load', '1', '8', '32', '256', 'Ideal']
+            case 'q2i':
+                cs = ['Load', '1', '2', '16', 'Ideal']
+            case 'q4':
+                cs = ['Load', 'LATR', 'Jord']
 
         d = ld.Data(cols = cs,
                     file = fn).unwrap()
 
         match ext:
-            case 'q1' | 'q2':
+            case 'q1' | 'q2' | 'q2i' | 'q4':
                 for n in cs[1:]:
                     a.plot(d['Load'], d[n], label = n)
-            case _:
-                for n in cs[1:]:
-                    a.plot(d['Load'], d[n], label = f'{n[:2]}x{n[2:]}')
 
         a.format(xlabel = 'Load (KRPS)',
                  ylabel = '99th Percentile Latency (us)',
                  ymin   =  0,
-                 ymax   =  1000,
+                 ymax   =  900,
                  xmin   =  0,
-                 xmax   =  180)
+                 xmax   =  160)
 
-        a.hlines(140, 0, 180, lw = 1, ls = 'dotted', color = 'red')
-        a.hlines(700, 0, 180, lw = 1, ls = 'dotted', color = 'red')
+        a.hlines(140, 0, 160, lw = 1, ls = 'dotted', color = 'red')
+        a.hlines(700, 0, 160, lw = 1, ls = 'dotted', color = 'red')
 
         a.text(2, 160, '2x SLO')
         a.text(2, 720, '10x SLO')
 
         match ext:
-            case 'q1':
+            case 'q1' | 'q4':
                 nc = 2
-            case 'q2':
+            case 'q2' | 'q2i':
                 nc = 6
-            case '':
-                nc = 3
-            case 'all':
-                nc = 4
 
         a.legend(loc = 't', ncols = nc)
 

@@ -7,46 +7,41 @@ import libdraw as ld
 
 
 def draw(fn, ext = ''):
+    if not ext:
+        sys.exit(f'ERROR: ext not specified')
+
     if not os.path.isfile(fn):
         sys.exit(f'ERROR: {fn} not found')
 
     with ld.Draw(fn + '.pdf') as (f, a):
         match ext:
             case 'q1':
-                cs = ['Load', 'Plain list', 'B-tree']
-            case '':
-                cs = ['Load', '1', '4', '8', '16', '32', '64']
-            case 'all':
-                cs = ['Load', '1', '4', '8', '16', '32', '64', '64 Plain list']
+                cs = ['Load', 'B-tree', 'Plain list', 'Ideal']
+            case 'q2':
+                cs = ['Load', '1', '8', '32', 'Ideal']
+            case 'q2i':
+                cs = ['Load', '1', '2', 'Ideal']
 
         d = ld.Data(cols = cs,
                     file = fn).unwrap()
 
         match ext:
-            case 'q1':
+            case 'q1' | 'q2' | 'q2i':
                 for n in cs[1:]:
                     a.plot(d['Load'], d[n], label = n)
-            case _:
-                for n in cs[1:]:
-                    a.plot(d['Load'], d[n], label = f'{n[:2]}x{n[2:]}')
 
         match ext:
-            case 'q1':
-                ym = 500
-                nc = 2
-            case '':
-                ym = 180
+            case 'q1' | 'q2i':
                 nc = 3
-            case 'all':
-                ym = 180
-                nc = 4
+            case 'q2':
+                nc = 6
 
         a.format(xlabel = 'Load (KRPS)',
                  ylabel = 'Throughput (KRPS)',
                  ymin   =  0,
-                 ymax   =  ym,
+                 ymax   =  500,
                  xmin   =  0,
-                 xmax   =  ym)
+                 xmax   =  500)
 
         a.legend(loc = 't', ncols = nc)
 

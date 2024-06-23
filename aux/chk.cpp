@@ -270,12 +270,8 @@ class Run {
 
     for (auto i = vlbs.begin(); i != vlbs.end();)
       if (i->base == base && i->bound == bound && i->csid == ocid) {
-        auto next = std::next(i);
-
-        vlbs.erase(i);
+        i = vlbs.erase(i);
         flag = true;
-
-        i = next;
 
       } else
         i++;
@@ -286,16 +282,13 @@ class Run {
   int handle_inv(const std::vector<std::string> &sp) {
     auto base = to_int(sp[4], 1, -1);
     auto bound = to_int(sp[5], 0, -1);
+    auto ocid = to_int(sp[7]);
     auto flag = false;
 
     for (auto i = vlbs.begin(); i != vlbs.end();)
-      if (i->base == base && i->bound == bound) {
-        auto next = std::next(i);
-
-        vlbs.erase(i);
+      if (i->base == base && i->bound == bound && i->csid == ocid) {
+        i = vlbs.erase(i);
         flag = true;
-
-        i = next;
 
       } else
         i++;
